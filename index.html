@@ -23,7 +23,8 @@
     --parchment-2:#E3D9BE;
     --ink:#1B2430;
     --ink-soft:#5A6270;
-    --danger:#C24C3E;
+    --cabin:#14171C;
+    --cabin-2:#1D2129;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{
@@ -78,7 +79,7 @@
   #screen-setup p.sub{
     color:#9AA5B4; font-size:13.5px; margin:0 0 18px; line-height:1.5;
   }
-  .route-list{display:flex; flex-direction:column; gap:10px; padding-bottom:16px;}
+  .route-list{display:flex; flex-direction:column; gap:10px; padding-bottom:4px;}
   .route-card{
     display:flex; align-items:center; justify-content:space-between;
     background:rgba(255,255,255,0.05);
@@ -101,9 +102,22 @@
   }
   .route-meta .km{font-size:11px; color:#8B93A3; margin-top:2px;}
 
+  .section-label{
+    font-size:11px; letter-spacing:1.5px; color:#7d8695; text-transform:uppercase;
+    font-weight:700; margin:20px 0 10px;
+  }
+  .chip-row{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:4px;}
+  .chip-row::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:0 0 auto; padding:9px 14px; border-radius:999px;
+    background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.1);
+    font-size:13px; color:#C7CDD6; white-space:nowrap; cursor:pointer;
+  }
+  .chip.selected{background:rgba(201,162,39,0.18); border-color:var(--brass); color:var(--brass-soft); font-weight:600;}
+
   .primary-btn{
     display:block; width:100%; border:none; border-radius:14px;
-    padding:16px; margin-top:8px;
+    padding:16px; margin-top:16px;
     background:var(--brass); color:#1B1400;
     font-family:'Inter',sans-serif; font-weight:700; font-size:15.5px;
     cursor:pointer; transition:.15s;
@@ -162,63 +176,74 @@
     opacity:0.75;
   }
 
-  /* ---------- SCREEN C: in-flight ---------- */
-  #screen-flight{padding:0; position:relative;}
-  .sky{
-    position:absolute; inset:0; z-index:0;
-    transition:background 0.6s linear;
-  }
-  .celestial{
-    position:absolute; width:46px; height:46px; border-radius:50%;
-    background:radial-gradient(circle at 35% 35%, #FFF6D8, #F4D06A 60%, #E8B93A);
-    box-shadow:0 0 40px 10px rgba(244,208,106,0.35);
-    left:50%; top:80%;
-    transform:translate(-50%,-50%);
-    z-index:1;
-    transition:opacity .6s;
-  }
-  .cloud{
-    position:absolute; z-index:1; opacity:0.85;
-    background:rgba(255,255,255,0.85);
-    border-radius:50px;
-    filter:blur(0.5px);
-    animation:drift linear infinite;
-  }
-  .cloud::before,.cloud::after{
-    content:''; position:absolute; background:inherit; border-radius:50%;
-  }
-  @keyframes drift{
-    from{transform:translateX(120vw);}
-    to{transform:translateX(-40vw);}
-  }
-
+  /* ---------- SCREEN C: in-flight (cabin + window) ---------- */
+  #screen-flight{padding:0; position:relative; background:radial-gradient(ellipse at 50% 0%, var(--cabin-2), var(--cabin) 70%);}
   .flight-content{
     position:relative; z-index:2;
-    display:flex; flex-direction:column; height:100%;
+    display:flex; flex-direction:column; height:100%; align-items:center;
     padding:calc(env(safe-area-inset-top) + 14px) 20px env(safe-area-inset-bottom);
   }
-  .flight-top{display:flex; justify-content:space-between; align-items:center;}
+  .flight-top{display:flex; justify-content:space-between; align-items:center; width:100%;}
   .flight-route-label{
     font-family:'JetBrains Mono',monospace; font-size:13px; color:rgba(255,255,255,0.85);
-    background:rgba(0,0,0,0.25); padding:6px 12px; border-radius:999px;
+    background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:999px;
     display:flex; gap:8px; align-items:center;
   }
   .exit-btn{
-    background:rgba(0,0,0,0.25); border:none; color:#fff; width:32px; height:32px;
+    background:rgba(255,255,255,0.08); border:none; color:#fff; width:32px; height:32px;
     border-radius:50%; font-size:15px; cursor:pointer;
   }
 
-  .path-area{flex:1; position:relative; min-height:140px; margin:10px 0;}
-  .path-area svg{width:100%; height:100%; overflow:visible;}
-  #planeIcon{font-size:22px; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));}
+  /* airplane window */
+  .window-shell{
+    width:min(72vw, 300px); aspect-ratio:3/4; margin:16px auto 6px;
+    border-radius:46% 46% 44% 44% / 38% 38% 42% 42%;
+    background:#0a0c10;
+    padding:14px;
+    box-shadow:0 18px 40px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(255,255,255,0.04);
+    flex-shrink:0;
+  }
+  .window-frame{
+    position:relative; width:100%; height:100%;
+    border-radius:44% 44% 42% 42% / 36% 36% 40% 40%;
+    overflow:hidden;
+    border:7px solid #e8e6e0;
+    box-shadow:inset 0 0 24px rgba(0,0,0,0.55), 0 0 0 2px #b9b6ac;
+  }
+  .window-sky{position:absolute; inset:0; transition:background .6s linear;}
+  .window-sat{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:cover; opacity:0; transition:opacity .5s ease;
+  }
+  .window-sat.loaded{opacity:0.92;}
+  .window-tint{position:absolute; inset:0; mix-blend-mode:multiply; transition:background .6s linear; pointer-events:none;}
+  .window-cloud{
+    position:absolute; z-index:3; opacity:0.8;
+    background:rgba(255,255,255,0.85);
+    border-radius:50px; filter:blur(0.5px);
+    animation:drift linear infinite;
+  }
+  @keyframes drift{
+    from{transform:translateX(160%);}
+    to{transform:translateX(-160%);}
+  }
+  .window-sun{
+    position:absolute; width:26px; height:26px; border-radius:50%; z-index:2;
+    background:radial-gradient(circle at 35% 35%, #FFF6D8, #F4D06A 60%, #E8B93A);
+    box-shadow:0 0 24px 6px rgba(244,208,106,0.4);
+    transition:opacity .6s;
+  }
+  .window-attrib{
+    position:absolute; bottom:3px; right:6px; font-size:7.5px; color:rgba(255,255,255,0.4); z-index:4;
+  }
 
-  .split-flap-wrap{display:flex; justify-content:center; align-items:baseline; gap:10px; margin:6px 0 4px;}
+  .split-flap-wrap{display:flex; justify-content:center; align-items:baseline; gap:10px; margin:10px 0 4px;}
   .flap-group{display:flex; gap:4px;}
   .flap{
-    width:44px; height:60px; background:rgba(10,14,22,0.55);
+    width:40px; height:54px; background:rgba(255,255,255,0.06);
     border-radius:8px; display:flex; align-items:center; justify-content:center;
-    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:34px; color:#fff;
-    border:1px solid rgba(255,255,255,0.15);
+    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:30px; color:#fff;
+    border:1px solid rgba(255,255,255,0.13);
     position:relative; overflow:hidden;
   }
   .flap.flip{animation:flipDigit .32s ease-in-out;}
@@ -227,30 +252,30 @@
     50%{transform:rotateX(90deg); opacity:.4;}
     100%{transform:rotateX(0deg); opacity:1;}
   }
-  .flap-colon{font-family:'JetBrains Mono',monospace; font-size:30px; font-weight:700; color:rgba(255,255,255,0.6);}
-  .flap-label{text-align:center; font-size:10.5px; letter-spacing:2px; color:rgba(255,255,255,0.55); margin-top:4px; text-transform:uppercase;}
+  .flap-colon{font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700; color:rgba(255,255,255,0.6);}
+  .flap-label{text-align:center; font-size:10px; letter-spacing:2px; color:rgba(255,255,255,0.5); margin-top:2px; text-transform:uppercase;}
 
   .readouts{
-    display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:16px;
+    display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; width:100%;
   }
   .readout{
-    background:rgba(0,0,0,0.22); border-radius:12px; padding:10px 8px; text-align:center;
-    border:1px solid rgba(255,255,255,0.08);
+    background:rgba(255,255,255,0.04); border-radius:12px; padding:9px 6px; text-align:center;
+    border:1px solid rgba(255,255,255,0.07);
   }
-  .readout .val{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:15px;}
-  .readout .lbl{font-size:9.5px; color:rgba(255,255,255,0.55); margin-top:2px; letter-spacing:1px;}
+  .readout .val{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px;}
+  .readout .lbl{font-size:9px; color:rgba(255,255,255,0.5); margin-top:2px; letter-spacing:1px;}
 
   .progress-track{
-    height:5px; background:rgba(255,255,255,0.15); border-radius:99px; margin-top:16px; overflow:hidden;
+    height:5px; background:rgba(255,255,255,0.13); border-radius:99px; margin-top:14px; overflow:hidden; width:100%;
   }
   .progress-fill{
     height:100%; background:linear-gradient(90deg,var(--brass-soft),var(--brass));
     width:0%; transition:width .5s linear;
   }
 
-  .flight-controls{display:flex; gap:10px; margin-top:16px; padding-bottom:6px;}
+  .flight-controls{display:flex; gap:10px; margin-top:14px; padding-bottom:6px; width:100%;}
   .flight-controls button{
-    flex:1; border:none; border-radius:12px; padding:13px; font-weight:700; font-size:14px;
+    flex:1; border:none; border-radius:12px; padding:12px; font-weight:700; font-size:14px;
     font-family:'Inter',sans-serif; cursor:pointer;
   }
   #pauseBtn{background:rgba(255,255,255,0.15); color:#fff;}
@@ -276,15 +301,32 @@
   .tier-fill{height:100%; background:linear-gradient(90deg,var(--brass-soft),var(--brass)); border-radius:99px;}
   .tier-caption{font-size:11px; color:#8B93A3; margin-top:6px; text-align:right;}
 
+  .note-card{
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09);
+    border-radius:16px; padding:16px; text-align:left; margin-bottom:14px;
+  }
+  .note-card label{
+    display:block; font-size:10.5px; letter-spacing:1px; color:#8B93A3;
+    text-transform:uppercase; font-weight:700; margin-bottom:8px;
+  }
+  .note-card textarea{
+    width:100%; min-height:64px; resize:vertical;
+    background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:10px;
+    color:#EDEFF3; font-family:'Inter',sans-serif; font-size:13.5px; padding:10px; line-height:1.5;
+  }
+  .note-card textarea::placeholder{color:#5b6472;}
+
   .history{margin-top:6px;}
   .history h3{font-size:11px; letter-spacing:1.5px; color:#8B93A3; text-transform:uppercase; margin:0 0 8px; text-align:left;}
   .history-item{
-    display:flex; justify-content:space-between; padding:10px 2px;
-    border-bottom:1px solid rgba(255,255,255,0.06); font-size:12.5px;
+    padding:10px 2px; border-bottom:1px solid rgba(255,255,255,0.06); font-size:12.5px; text-align:left;
   }
+  .history-item .row1{display:flex; justify-content:space-between;}
   .history-item .r{font-family:'JetBrains Mono',monospace; color:#C7CDD6;}
   .history-item .m{color:var(--brass-soft); font-weight:600;}
   .history-item .d{color:#6b7280; font-size:11px;}
+  .history-item .tag{color:#8B93A3; font-size:10.5px; margin-top:2px;}
+  .history-item .note{color:#9AA5B4; font-size:11.5px; margin-top:4px; line-height:1.4;}
 
   .footer-note{
     margin-top:auto; padding-top:14px; text-align:center;
@@ -307,11 +349,15 @@
     <h1>오늘은 어디로<br>떠나볼까요?</h1>
     <p class="sub">노선을 고르면 그 비행시간만큼 집중 세션이 시작됩니다. 실제 비행시간이 아닌, 몰입에 맞게 축소한 시간입니다.</p>
     <div class="route-list" id="routeList"></div>
+
+    <div class="section-label">무엇에 집중할까요? (선택)</div>
+    <div class="chip-row" id="categoryRow"></div>
+
     <button class="primary-btn" id="issueBtn" disabled>탑승권 발급</button>
     <div class="footer-note">
       화면을 켜둔 채 이 앱을 보고 있는 동안 세션이 진행됩니다.<br>기기의 다른 앱을 자동으로 막지는 못해요 — 직접 비행기 모드를 켜두면 더 좋아요.
     </div>
-    <div class="version-tag">FocusFlight v1.0.0</div>
+    <div class="version-tag">FocusFlight v1.1.0</div>
   </div>
 
   <!-- SCREEN B: 탑승권 -->
@@ -337,7 +383,7 @@
             <div class="bp-field"><label>Seat</label><span id="passSeat">24A</span></div>
             <div class="bp-field"><label>Class</label><span id="passClass">ECONOMY</span></div>
             <div class="bp-field"><label>Duration</label><span id="passDur">50분</span></div>
-            <div class="bp-field"><label>Boarding</label><span id="passTime">--:--</span></div>
+            <div class="bp-field"><label>Focus</label><span id="passCategory">자유</span></div>
           </div>
         </div>
         <div class="bp-perf"></div>
@@ -355,20 +401,23 @@
 
   <!-- SCREEN C: 비행 중 -->
   <div class="screen" id="screen-flight">
-    <div class="sky" id="sky"></div>
-    <div class="celestial" id="celestial"></div>
-    <div id="cloudLayer"></div>
     <div class="flight-content">
       <div class="flight-top">
         <div class="flight-route-label"><span id="flRoute">ICN → NRT</span></div>
         <button class="exit-btn" id="exitBtn">✕</button>
       </div>
-      <div class="path-area">
-        <svg viewBox="0 0 400 140" preserveAspectRatio="none">
-          <path id="flightPath" d="M 24 110 Q 200 10 376 110" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="2" stroke-dasharray="2 8" stroke-linecap="round"/>
-        </svg>
-        <div id="planeIcon" style="position:absolute; left:0; top:0;">✈</div>
+
+      <div class="window-shell">
+        <div class="window-frame">
+          <div class="window-sky" id="windowSky"></div>
+          <img class="window-sat" id="windowSat" alt="">
+          <div class="window-tint" id="windowTint"></div>
+          <div class="window-sun" id="windowSun"></div>
+          <div id="cloudLayer"></div>
+          <div class="window-attrib">Esri</div>
+        </div>
       </div>
+
       <div class="split-flap-wrap">
         <div class="flap-group" id="mmGroup"></div>
         <div class="flap-colon">:</div>
@@ -402,11 +451,15 @@
           <div class="tier-caption" id="tierCaption">다음 등급까지 500마일</div>
         </div>
       </div>
+      <div class="note-card">
+        <label>비행 로그 — 오늘은 어땠나요?</label>
+        <textarea id="flightNote" placeholder="예: 천둥소리 때문에 좀처럼 집중이 안 됐다. 그래도 거의 끝냈다."></textarea>
+      </div>
       <div class="history">
         <h3>최근 비행기록</h3>
         <div id="historyList"></div>
       </div>
-      <button class="primary-btn" id="againBtn" style="margin-top:18px;">다시 발권하기</button>
+      <button class="primary-btn" id="againBtn" style="margin-top:6px;">다시 발권하기</button>
     </div>
   </div>
 
@@ -416,13 +469,14 @@
 (function(){
   // ---------------- 데이터 ----------------
   const ROUTES = [
-    {from:'ICN',fromCity:'서울',to:'FUK',toCity:'후쿠오카',minutes:25,km:550},
-    {from:'ICN',fromCity:'서울',to:'KIX',toCity:'오사카',minutes:40,km:860},
-    {from:'ICN',fromCity:'서울',to:'NRT',toCity:'도쿄',minutes:50,km:1160},
-    {from:'ICN',fromCity:'서울',to:'PVG',toCity:'상하이',minutes:70,km:870},
-    {from:'ICN',fromCity:'서울',to:'SIN',toCity:'싱가포르',minutes:90,km:4700},
-    {from:'ICN',fromCity:'서울',to:'CDG',toCity:'파리',minutes:120,km:9000},
+    {from:'ICN',fromCity:'서울',to:'FUK',toCity:'후쿠오카',minutes:25,km:550, fromLat:37.4602,fromLon:126.4407, toLat:33.5859,toLon:130.4500},
+    {from:'ICN',fromCity:'서울',to:'KIX',toCity:'오사카',minutes:40,km:860, fromLat:37.4602,fromLon:126.4407, toLat:34.4273,toLon:135.2440},
+    {from:'ICN',fromCity:'서울',to:'NRT',toCity:'도쿄',minutes:50,km:1160, fromLat:37.4602,fromLon:126.4407, toLat:35.7647,toLon:140.3864},
+    {from:'ICN',fromCity:'서울',to:'PVG',toCity:'상하이',minutes:70,km:870, fromLat:37.4602,fromLon:126.4407, toLat:31.1443,toLon:121.8083},
+    {from:'ICN',fromCity:'서울',to:'SIN',toCity:'싱가포르',minutes:90,km:4700, fromLat:37.4602,fromLon:126.4407, toLat:1.3644,toLon:103.9915},
+    {from:'ICN',fromCity:'서울',to:'CDG',toCity:'파리',minutes:120,km:9000, fromLat:37.4602,fromLon:126.4407, toLat:49.0097,toLon:2.5479},
   ];
+  const CATEGORIES = ['자유','업무','독서','코딩','공부','명상','운동'];
   const TIERS = [
     {name:'이코노미', min:0},
     {name:'프리미엄 이코노미', min:500},
@@ -466,13 +520,15 @@
     document.getElementById('tierLabelTop').textContent = TIERS[idx].name;
   }
 
-  // ---------------- SCREEN A: 노선 목록 ----------------
+  // ---------------- SCREEN A: 노선 & 카테고리 ----------------
   const routeListEl = document.getElementById('routeList');
+  const categoryRowEl = document.getElementById('categoryRow');
   let selectedRoute = null;
+  let selectedCategory = CATEGORIES[0];
 
   function renderRoutes(){
     routeListEl.innerHTML = '';
-    ROUTES.forEach((r, i)=>{
+    ROUTES.forEach((r)=>{
       const card = document.createElement('div');
       card.className = 'route-card';
       card.innerHTML = `
@@ -493,11 +549,26 @@
       routeListEl.appendChild(card);
     });
   }
+  function renderCategories(){
+    categoryRowEl.innerHTML = '';
+    CATEGORIES.forEach((c)=>{
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (c===selectedCategory ? ' selected' : '');
+      chip.textContent = c;
+      chip.addEventListener('click', ()=>{
+        selectedCategory = c;
+        [...categoryRowEl.children].forEach(x=>x.classList.remove('selected'));
+        chip.classList.add('selected');
+      });
+      categoryRowEl.appendChild(chip);
+    });
+  }
   renderRoutes();
+  renderCategories();
   refreshTopTier();
 
   // ---------------- SCREEN B: 탑승권 ----------------
-  let currentFlight = null; // {route, seat, cls, flightNo, gate}
+  let currentFlight = null;
 
   document.getElementById('issueBtn').addEventListener('click', ()=>{
     if(!selectedRoute) return;
@@ -511,7 +582,7 @@
 
     currentFlight = {
       route: selectedRoute,
-      seat, cls: tierName,
+      seat, cls: tierName, category: selectedCategory,
       flightNo: 'FF' + (100+Math.floor(Math.random()*900)),
       gate: (1+Math.floor(Math.random()*30)),
     };
@@ -525,9 +596,7 @@
     document.getElementById('passSeat').textContent = seat;
     document.getElementById('passClass').textContent = tierName.toUpperCase();
     document.getElementById('passDur').textContent = selectedRoute.minutes + '분';
-    const now = new Date();
-    document.getElementById('passTime').textContent =
-      String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('passCategory').textContent = selectedCategory;
 
     goto('pass');
   });
@@ -535,11 +604,11 @@
   document.getElementById('backBtn').addEventListener('click', ()=>goto('setup'));
 
   // ---------------- SCREEN C: 비행 ----------------
-  const skyEl = document.getElementById('sky');
-  const celestialEl = document.getElementById('celestial');
+  const windowSky = document.getElementById('windowSky');
+  const windowSat = document.getElementById('windowSat');
+  const windowTint = document.getElementById('windowTint');
+  const windowSun = document.getElementById('windowSun');
   const cloudLayer = document.getElementById('cloudLayer');
-  const planeIcon = document.getElementById('planeIcon');
-  const flightPath = document.getElementById('flightPath');
   const flProgress = document.getElementById('flProgress');
   const roAlt = document.getElementById('roAlt');
   const roSpd = document.getElementById('roSpd');
@@ -547,60 +616,84 @@
   const mmGroup = document.getElementById('mmGroup');
   const ssGroup = document.getElementById('ssGroup');
 
-  // 스카이 키프레임: [progress, hexColorTop, hexColorBottom]
   const SKY_STOPS = [
-    [0.00, '#0B1626', '#1B2A44'],
-    [0.12, '#3A2E52', '#5A3F52'],
-    [0.28, '#E8825A', '#4FA6D8'],
-    [0.50, '#3E93CE', '#7FC4E8'],
-    [0.72, '#E8825A', '#5A3F52'],
-    [0.88, '#3A2E52', '#1B2A44'],
-    [1.00, '#0B1626', '#1B2A44'],
+    [0.00, '#0B1626'],
+    [0.12, '#3A2E52'],
+    [0.28, '#E8825A'],
+    [0.50, '#4FA6D8'],
+    [0.72, '#E8825A'],
+    [0.88, '#3A2E52'],
+    [1.00, '#0B1626'],
   ];
   function hexToRgb(h){h=h.replace('#','');return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
-  function lerp(a,b,t){return Math.round(a+(b-a)*t);}
+  function lerp(a,b,t){return a+(b-a)*t;}
   function lerpHex(h1,h2,t){
     const a=hexToRgb(h1), b=hexToRgb(h2);
-    return `rgb(${lerp(a[0],b[0],t)},${lerp(a[1],b[1],t)},${lerp(a[2],b[2],t)})`;
+    return `rgb(${Math.round(lerp(a[0],b[0],t))},${Math.round(lerp(a[1],b[1],t))},${Math.round(lerp(a[2],b[2],t))})`;
   }
-  function applySky(progress){
+  function skyColorAt(progress){
     let s0=SKY_STOPS[0], s1=SKY_STOPS[SKY_STOPS.length-1];
     for(let i=0;i<SKY_STOPS.length-1;i++){
-      if(progress>=SKY_STOPS[i][0] && progress<=SKY_STOPS[i+1][0]){
-        s0=SKY_STOPS[i]; s1=SKY_STOPS[i+1]; break;
-      }
+      if(progress>=SKY_STOPS[i][0] && progress<=SKY_STOPS[i+1][0]){ s0=SKY_STOPS[i]; s1=SKY_STOPS[i+1]; break; }
     }
     const span = s1[0]-s0[0] || 1;
     const t = (progress - s0[0]) / span;
-    const top = lerpHex(s0[1], s1[1], t);
-    const bottom = lerpHex(s0[2], s1[2], t);
-    skyEl.style.background = `linear-gradient(180deg, ${top} 0%, ${bottom} 100%)`;
+    return lerpHex(s0[1], s1[1], t);
+  }
 
-    // 태양/달: 진행률에 따라 포물선 궤도, 밤 구간엔 흐리게
-    const arcT = progress; // 0..1
-    const x = 10 + arcT*80; // %
-    const y = 85 - Math.sin(arcT*Math.PI)*55; // %
-    celestialEl.style.left = x+'%';
-    celestialEl.style.top = y+'%';
-    const isNight = progress < 0.08 || progress > 0.92;
-    celestialEl.style.opacity = isNight ? '0.25' : '1';
+  // 위경도 → 슬리피맵 타일 좌표
+  function lon2tileX(lon, z){ return Math.floor((lon+180)/360*Math.pow(2,z)); }
+  function lat2tileY(lat, z){
+    const rad = lat*Math.PI/180;
+    return Math.floor((1 - Math.log(Math.tan(rad) + 1/Math.cos(rad))/Math.PI) / 2 * Math.pow(2,z));
+  }
+  const SAT_ZOOM = 6;
+  let lastTileKey = null;
+
+  function updateWindow(progress){
+    const col = skyColorAt(progress);
+    windowSky.style.background = `linear-gradient(180deg, ${col}, ${lerpHex('#0B1626','#1B2A44',0.4)})`;
+
+    const isNight = progress < 0.06 || progress > 0.94;
+    windowTint.style.background = isNight ? 'rgba(6,10,20,0.55)' : 'rgba(0,0,0,0)';
+
+    const sunT = progress;
+    windowSun.style.left = (10 + sunT*80) + '%';
+    windowSun.style.top = (78 - Math.sin(sunT*Math.PI)*55) + '%';
+    windowSun.style.opacity = isNight ? '0.2' : '0.95';
+
+    if(!currentFlight) return;
+    const r = currentFlight.route;
+    const lat = lerp(r.fromLat, r.toLat, progress);
+    const lon = lerp(r.fromLon, r.toLon, progress);
+    const x = lon2tileX(lon, SAT_ZOOM);
+    const y = lat2tileY(lat, SAT_ZOOM);
+    const key = x+'_'+y;
+    if(key !== lastTileKey){
+      lastTileKey = key;
+      const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${SAT_ZOOM}/${y}/${x}`;
+      const testImg = new Image();
+      testImg.onload = ()=>{ windowSat.src = url; windowSat.classList.add('loaded'); };
+      testImg.onerror = ()=>{ windowSat.classList.remove('loaded'); };
+      testImg.src = url;
+    }
   }
 
   function spawnClouds(){
     cloudLayer.innerHTML = '';
-    const count = 6;
+    const count = 5;
     for(let i=0;i<count;i++){
       const c = document.createElement('div');
-      c.className = 'cloud';
-      const w = 60 + Math.random()*90;
+      c.className = 'window-cloud';
+      const w = 50 + Math.random()*70;
       const h = w*0.4;
       c.style.width = w+'px';
       c.style.height = h+'px';
-      c.style.top = (10+Math.random()*60)+'%';
-      const dur = 18 + Math.random()*22;
+      c.style.top = (10+Math.random()*70)+'%';
+      const dur = 14 + Math.random()*18;
       c.style.animationDuration = dur+'s';
       c.style.animationDelay = (-Math.random()*dur)+'s';
-      c.style.opacity = (0.4+Math.random()*0.4).toFixed(2);
+      c.style.opacity = (0.35+Math.random()*0.35).toFixed(2);
       cloudLayer.appendChild(c);
     }
   }
@@ -625,7 +718,7 @@
     for(let i=0;i<flaps.length;i++){
       if(!lastStr || lastStr[i]!==str[i]){
         flaps[i].classList.remove('flip');
-        void flaps[i].offsetWidth; // reflow to restart animation
+        void flaps[i].offsetWidth;
         flaps[i].classList.add('flip');
         flaps[i].textContent = str[i];
       }
@@ -636,24 +729,6 @@
   let totalSeconds = 0;
   let remainingSeconds = 0;
   let paused = false;
-
-  let pathLen = 0;
-  function layoutPath(){
-    pathLen = flightPath.getTotalLength();
-  }
-
-  function updatePlanePosition(progress){
-    const areaW = document.querySelector('.path-area').clientWidth;
-    const areaH = document.querySelector('.path-area').clientHeight;
-    const pt = flightPath.getPointAtLength(progress*pathLen);
-    const nextPt = flightPath.getPointAtLength(Math.min(progress+0.01,1)*pathLen);
-    const angle = Math.atan2(nextPt.y-pt.y, nextPt.x-pt.x) * 180/Math.PI;
-    // SVG viewBox is 400x140, scale to actual box
-    const scaleX = areaW/400, scaleY = areaH/140;
-    planeIcon.style.left = (pt.x*scaleX - 11)+'px';
-    planeIcon.style.top = (pt.y*scaleY - 11)+'px';
-    planeIcon.style.transform = `rotate(${angle+90}deg)`;
-  }
 
   function tick(){
     if(paused) return;
@@ -673,10 +748,8 @@
     lastMM = mmStr; lastSS = ssStr;
 
     flProgress.style.width = (progress*100).toFixed(1)+'%';
-    applySky(progress);
-    updatePlanePosition(progress);
+    updateWindow(progress);
 
-    // readouts (연출용 수치)
     const cruiseP = Math.min(1, progress/0.15);
     const descP = Math.min(1, (1-progress)/0.15);
     const altFactor = Math.min(cruiseP, descP);
@@ -690,15 +763,14 @@
     totalSeconds = currentFlight.route.minutes*60;
     remainingSeconds = totalSeconds;
     paused = false;
+    lastTileKey = null;
+    windowSat.classList.remove('loaded');
     document.getElementById('pauseBtn').textContent = '일시정지';
     document.getElementById('flRoute').textContent = `${currentFlight.route.from} → ${currentFlight.route.to}`;
     lastMM = null; lastSS = null;
     spawnClouds();
     goto('flight');
-    requestAnimationFrame(()=>{
-      layoutPath();
-      renderFlightState();
-    });
+    requestAnimationFrame(renderFlightState);
     clearInterval(flightTimer);
     flightTimer = setInterval(tick, 1000);
   }
@@ -727,6 +799,8 @@
       route: `${route.from} → ${route.to}`,
       minutes: route.minutes,
       miles,
+      category: currentFlight.category,
+      note: '',
       date: new Date().toLocaleDateString('ko-KR', {month:'short', day:'numeric'}),
     });
     data.history = data.history.slice(0, 8);
@@ -737,10 +811,13 @@
   }
 
   // ---------------- SCREEN D: 착륙 ----------------
+  const flightNoteEl = document.getElementById('flightNote');
+
   function renderLanding(earned, route){
     document.getElementById('landRoute').textContent = `${route.to} 착륙 완료`;
     document.getElementById('earnedMiles').textContent = '+'+earned.toLocaleString();
     document.getElementById('totalMiles').textContent = data.totalMiles.toLocaleString();
+    flightNoteEl.value = '';
 
     const idx = getTier(data.totalMiles);
     const tier = TIERS[idx];
@@ -758,19 +835,35 @@
       fillEl.style.width = '100%';
       capEl.textContent = '최고 등급 달성 · 퍼스트클래스';
     }
+    renderHistory();
+  }
 
+  function renderHistory(){
     const histEl = document.getElementById('historyList');
     histEl.innerHTML = '';
     if(data.history.length===0){
       histEl.innerHTML = '<div style="color:#6b7280; font-size:12.5px; padding:8px 2px;">아직 기록이 없어요.</div>';
+      return;
     }
-    data.history.forEach(h=>{
+    data.history.forEach((h)=>{
       const row = document.createElement('div');
       row.className = 'history-item';
-      row.innerHTML = `<span class="r">${h.route}</span><span class="d">${h.date} · ${h.minutes}분</span><span class="m">+${h.miles}</span>`;
+      const tagHtml = h.category && h.category!=='자유' ? `<div class="tag">#${h.category}</div>` : '';
+      const noteHtml = h.note ? `<div class="note">"${h.note}"</div>` : '';
+      row.innerHTML = `
+        <div class="row1"><span class="r">${h.route}</span><span class="d">${h.date} · ${h.minutes}분</span><span class="m">+${h.miles}</span></div>
+        ${tagHtml}${noteHtml}`;
       histEl.appendChild(row);
     });
   }
+
+  flightNoteEl.addEventListener('change', ()=>{
+    if(data.history.length>0){
+      data.history[0].note = flightNoteEl.value.trim();
+      saveData(data);
+      renderHistory();
+    }
+  });
 
   document.getElementById('againBtn').addEventListener('click', ()=>{
     selectedRoute = null;
@@ -778,8 +871,6 @@
     [...routeListEl.children].forEach(c=>c.classList.remove('selected'));
     goto('setup');
   });
-
-  window.addEventListener('resize', ()=>{ if(screens.flight.classList.contains('active')){ layoutPath(); } });
 
 })();
 </script>
