@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>포커스플라이트</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B1626">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#0B1626;
+    --dawn:#3A2E52;
+    --horizon:#E8825A;
+    --day:#4FA6D8;
+    --cloud:#F4F6FA;
+    --brass:#C9A227;
+    --brass-soft:#E7CE7B;
+    --parchment:#EDE6D3;
+    --parchment-2:#E3D9BE;
+    --ink:#1B2430;
+    --ink-soft:#5A6270;
+    --danger:#C24C3E;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--night);
+    color:var(--cloud);
+    font-family:'Inter',sans-serif;
+    overflow:hidden;
+    overscroll-behavior:none;
+  }
+  #app{
+    position:fixed; inset:0;
+    display:flex; flex-direction:column;
+    max-width:480px; margin:0 auto;
+    background:var(--night);
+  }
+  .screen{
+    flex:1; display:none; flex-direction:column;
+    padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom);
+    overflow-y:auto;
+  }
+  .screen.active{display:flex;}
+
+  /* ---------- top status bar (app chrome) ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 4px 10px;
+    flex-shrink:0;
+  }
+  .brand{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800; font-size:20px; letter-spacing:0.5px;
+    color:var(--cloud);
+  }
+  .brand span{color:var(--brass-soft);}
+  .status-pill{
+    display:flex; align-items:center; gap:6px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(201,162,39,0.4);
+    padding:6px 12px; border-radius:999px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px; color:var(--brass-soft);
+  }
+  .status-pill b{color:var(--cloud); font-weight:700;}
+
+  /* ---------- SCREEN A: route select ---------- */
+  #screen-setup h1{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800; font-size:34px; line-height:1.05;
+    margin:6px 0 4px; color:var(--cloud);
+  }
+  #screen-setup p.sub{
+    color:#9AA5B4; font-size:13.5px; margin:0 0 18px; line-height:1.5;
+  }
+  .route-list{display:flex; flex-direction:column; gap:10px; padding-bottom:16px;}
+  .route-card{
+    display:flex; align-items:center; justify-content:space-between;
+    background:rgba(255,255,255,0.05);
+    border:1.5px solid rgba(255,255,255,0.08);
+    border-radius:16px; padding:14px 16px;
+    cursor:pointer; transition:.15s;
+  }
+  .route-card.selected{
+    border-color:var(--brass); background:rgba(201,162,39,0.12);
+  }
+  .route-codes{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800; font-size:22px; display:flex; align-items:center; gap:8px;
+  }
+  .route-codes .arrow{color:var(--brass-soft); font-size:16px;}
+  .route-cities{font-size:11.5px; color:#8B93A3; margin-top:2px; font-weight:500;}
+  .route-meta{text-align:right;}
+  .route-meta .dur{
+    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:15px; color:var(--brass-soft);
+  }
+  .route-meta .km{font-size:11px; color:#8B93A3; margin-top:2px;}
+
+  .primary-btn{
+    display:block; width:100%; border:none; border-radius:14px;
+    padding:16px; margin-top:8px;
+    background:var(--brass); color:#1B1400;
+    font-family:'Inter',sans-serif; font-weight:700; font-size:15.5px;
+    cursor:pointer; transition:.15s;
+  }
+  .primary-btn:disabled{background:#3a3f2f; color:#6b6f60; cursor:not-allowed;}
+  .primary-btn:active:not(:disabled){transform:scale(0.98);}
+  .ghost-btn{
+    display:block; width:100%; border:1.5px solid rgba(255,255,255,0.18);
+    border-radius:14px; padding:14px; margin-top:10px;
+    background:transparent; color:#C7CDD6;
+    font-family:'Inter',sans-serif; font-weight:600; font-size:14.5px;
+    cursor:pointer;
+  }
+
+  /* ---------- SCREEN B: boarding pass ---------- */
+  #screen-pass{align-items:center; justify-content:center;}
+  .pass-wrap{width:100%; max-width:360px;}
+  .pass-eyebrow{
+    text-align:center; font-size:12px; letter-spacing:2px; color:var(--brass-soft);
+    font-weight:700; margin-bottom:14px; text-transform:uppercase;
+  }
+  .boarding-pass{
+    background:var(--parchment); color:var(--ink);
+    border-radius:18px; overflow:hidden;
+    box-shadow:0 20px 40px rgba(0,0,0,0.35);
+  }
+  .bp-top{padding:20px 20px 16px;}
+  .bp-route{display:flex; align-items:center; justify-content:space-between;}
+  .bp-code{font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:38px; line-height:1;}
+  .bp-city{font-size:11px; color:var(--ink-soft); font-weight:600; margin-top:2px;}
+  .bp-plane{font-size:20px; color:var(--brass); transform:rotate(90deg); margin:0 6px;}
+  .bp-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:14px;
+    margin-top:18px; padding-top:14px; border-top:1px dashed rgba(27,36,48,0.25);
+  }
+  .bp-field label{
+    display:block; font-size:9.5px; letter-spacing:1px; color:var(--ink-soft);
+    font-weight:700; text-transform:uppercase; margin-bottom:3px;
+  }
+  .bp-field span{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px;}
+  .bp-perf{
+    position:relative; height:0; border-top:2px dashed rgba(27,36,48,0.3);
+    margin:0 -1px;
+  }
+  .bp-perf::before,.bp-perf::after{
+    content:''; position:absolute; top:-11px; width:22px; height:22px;
+    background:var(--night); border-radius:50%;
+  }
+  .bp-perf::before{left:-11px;}
+  .bp-perf::after{right:-11px;}
+  .bp-bottom{padding:16px 20px 20px; display:flex; justify-content:space-between; align-items:center;}
+  .bp-bottom .bp-field span{font-size:16px;}
+  .bp-barcode{
+    height:32px; width:90px;
+    background:repeating-linear-gradient(90deg,var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 6px, transparent 6px 9px);
+    opacity:0.75;
+  }
+
+  /* ---------- SCREEN C: in-flight ---------- */
+  #screen-flight{padding:0; position:relative;}
+  .sky{
+    position:absolute; inset:0; z-index:0;
+    transition:background 0.6s linear;
+  }
+  .celestial{
+    position:absolute; width:46px; height:46px; border-radius:50%;
+    background:radial-gradient(circle at 35% 35%, #FFF6D8, #F4D06A 60%, #E8B93A);
+    box-shadow:0 0 40px 10px rgba(244,208,106,0.35);
+    left:50%; top:80%;
+    transform:translate(-50%,-50%);
+    z-index:1;
+    transition:opacity .6s;
+  }
+  .cloud{
+    position:absolute; z-index:1; opacity:0.85;
+    background:rgba(255,255,255,0.85);
+    border-radius:50px;
+    filter:blur(0.5px);
+    animation:drift linear infinite;
+  }
+  .cloud::before,.cloud::after{
+    content:''; position:absolute; background:inherit; border-radius:50%;
+  }
+  @keyframes drift{
+    from{transform:translateX(120vw);}
+    to{transform:translateX(-40vw);}
+  }
+
+  .flight-content{
+    position:relative; z-index:2;
+    display:flex; flex-direction:column; height:100%;
+    padding:calc(env(safe-area-inset-top) + 14px) 20px env(safe-area-inset-bottom);
+  }
+  .flight-top{display:flex; justify-content:space-between; align-items:center;}
+  .flight-route-label{
+    font-family:'JetBrains Mono',monospace; font-size:13px; color:rgba(255,255,255,0.85);
+    background:rgba(0,0,0,0.25); padding:6px 12px; border-radius:999px;
+    display:flex; gap:8px; align-items:center;
+  }
+  .exit-btn{
+    background:rgba(0,0,0,0.25); border:none; color:#fff; width:32px; height:32px;
+    border-radius:50%; font-size:15px; cursor:pointer;
+  }
+
+  .path-area{flex:1; position:relative; min-height:140px; margin:10px 0;}
+  .path-area svg{width:100%; height:100%; overflow:visible;}
+  #planeIcon{font-size:22px; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));}
+
+  .split-flap-wrap{display:flex; justify-content:center; align-items:baseline; gap:10px; margin:6px 0 4px;}
+  .flap-group{display:flex; gap:4px;}
+  .flap{
+    width:44px; height:60px; background:rgba(10,14,22,0.55);
+    border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:34px; color:#fff;
+    border:1px solid rgba(255,255,255,0.15);
+    position:relative; overflow:hidden;
+  }
+  .flap.flip{animation:flipDigit .32s ease-in-out;}
+  @keyframes flipDigit{
+    0%{transform:rotateX(0deg);}
+    50%{transform:rotateX(90deg); opacity:.4;}
+    100%{transform:rotateX(0deg); opacity:1;}
+  }
+  .flap-colon{font-family:'JetBrains Mono',monospace; font-size:30px; font-weight:700; color:rgba(255,255,255,0.6);}
+  .flap-label{text-align:center; font-size:10.5px; letter-spacing:2px; color:rgba(255,255,255,0.55); margin-top:4px; text-transform:uppercase;}
+
+  .readouts{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:16px;
+  }
+  .readout{
+    background:rgba(0,0,0,0.22); border-radius:12px; padding:10px 8px; text-align:center;
+    border:1px solid rgba(255,255,255,0.08);
+  }
+  .readout .val{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:15px;}
+  .readout .lbl{font-size:9.5px; color:rgba(255,255,255,0.55); margin-top:2px; letter-spacing:1px;}
+
+  .progress-track{
+    height:5px; background:rgba(255,255,255,0.15); border-radius:99px; margin-top:16px; overflow:hidden;
+  }
+  .progress-fill{
+    height:100%; background:linear-gradient(90deg,var(--brass-soft),var(--brass));
+    width:0%; transition:width .5s linear;
+  }
+
+  .flight-controls{display:flex; gap:10px; margin-top:16px; padding-bottom:6px;}
+  .flight-controls button{
+    flex:1; border:none; border-radius:12px; padding:13px; font-weight:700; font-size:14px;
+    font-family:'Inter',sans-serif; cursor:pointer;
+  }
+  #pauseBtn{background:rgba(255,255,255,0.15); color:#fff;}
+
+  /* ---------- SCREEN D: landing ---------- */
+  #screen-landing{align-items:center; justify-content:center; text-align:center;}
+  .landing-wrap{width:100%;}
+  .landing-emoji{font-size:44px; margin-bottom:6px;}
+  #screen-landing h1{
+    font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:30px; margin:4px 0 2px;
+  }
+  #screen-landing p.sub2{color:#9AA5B4; font-size:13.5px; margin:0 0 20px;}
+  .miles-card{
+    background:linear-gradient(135deg,#1a2436,#131b29);
+    border:1px solid rgba(201,162,39,0.35);
+    border-radius:18px; padding:20px; text-align:left; margin-bottom:14px;
+  }
+  .miles-row{display:flex; justify-content:space-between; align-items:center; padding:8px 0;}
+  .miles-row:not(:last-child){border-bottom:1px solid rgba(255,255,255,0.08);}
+  .miles-row .k{font-size:13px; color:#9AA5B4;}
+  .miles-row .v{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px; color:var(--brass-soft);}
+  .tier-track{height:8px; background:rgba(255,255,255,0.1); border-radius:99px; margin-top:6px; overflow:hidden;}
+  .tier-fill{height:100%; background:linear-gradient(90deg,var(--brass-soft),var(--brass)); border-radius:99px;}
+  .tier-caption{font-size:11px; color:#8B93A3; margin-top:6px; text-align:right;}
+
+  .history{margin-top:6px;}
+  .history h3{font-size:11px; letter-spacing:1.5px; color:#8B93A3; text-transform:uppercase; margin:0 0 8px; text-align:left;}
+  .history-item{
+    display:flex; justify-content:space-between; padding:10px 2px;
+    border-bottom:1px solid rgba(255,255,255,0.06); font-size:12.5px;
+  }
+  .history-item .r{font-family:'JetBrains Mono',monospace; color:#C7CDD6;}
+  .history-item .m{color:var(--brass-soft); font-weight:600;}
+  .history-item .d{color:#6b7280; font-size:11px;}
+
+  .footer-note{
+    margin-top:auto; padding-top:14px; text-align:center;
+    font-size:10.5px; color:#54606f; line-height:1.6;
+  }
+  .version-tag{
+    text-align:center; font-family:'JetBrains Mono',monospace; font-size:10px; color:#3d4653; margin-top:6px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SCREEN A: 발권 데스크 -->
+  <div class="screen active" id="screen-setup">
+    <div class="topbar">
+      <div class="brand">Focus<span>Flight</span></div>
+      <div class="status-pill">✈ <b id="tierLabelTop">이코노미</b></div>
+    </div>
+    <h1>오늘은 어디로<br>떠나볼까요?</h1>
+    <p class="sub">노선을 고르면 그 비행시간만큼 집중 세션이 시작됩니다. 실제 비행시간이 아닌, 몰입에 맞게 축소한 시간입니다.</p>
+    <div class="route-list" id="routeList"></div>
+    <button class="primary-btn" id="issueBtn" disabled>탑승권 발급</button>
+    <div class="footer-note">
+      화면을 켜둔 채 이 앱을 보고 있는 동안 세션이 진행됩니다.<br>기기의 다른 앱을 자동으로 막지는 못해요 — 직접 비행기 모드를 켜두면 더 좋아요.
+    </div>
+    <div class="version-tag">FocusFlight v1.0.0</div>
+  </div>
+
+  <!-- SCREEN B: 탑승권 -->
+  <div class="screen" id="screen-pass">
+    <div class="pass-wrap">
+      <div class="pass-eyebrow">Boarding Pass</div>
+      <div class="boarding-pass">
+        <div class="bp-top">
+          <div class="bp-route">
+            <div>
+              <div class="bp-code" id="passFrom">ICN</div>
+              <div class="bp-city" id="passFromCity">SEOUL</div>
+            </div>
+            <div class="bp-plane">✈</div>
+            <div style="text-align:right;">
+              <div class="bp-code" id="passTo">NRT</div>
+              <div class="bp-city" id="passToCity">TOKYO</div>
+            </div>
+          </div>
+          <div class="bp-grid">
+            <div class="bp-field"><label>Flight</label><span id="passFlightNo">FF204</span></div>
+            <div class="bp-field"><label>Gate</label><span id="passGate">14</span></div>
+            <div class="bp-field"><label>Seat</label><span id="passSeat">24A</span></div>
+            <div class="bp-field"><label>Class</label><span id="passClass">ECONOMY</span></div>
+            <div class="bp-field"><label>Duration</label><span id="passDur">50분</span></div>
+            <div class="bp-field"><label>Boarding</label><span id="passTime">--:--</span></div>
+          </div>
+        </div>
+        <div class="bp-perf"></div>
+        <div class="bp-bottom">
+          <div class="bp-field"><label>Passenger</label><span>YOU</span></div>
+          <div class="bp-barcode"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pass-wrap">
+      <button class="primary-btn" id="boardBtn">탑승 완료 · 이륙</button>
+      <button class="ghost-btn" id="backBtn">노선 다시 고르기</button>
+    </div>
+  </div>
+
+  <!-- SCREEN C: 비행 중 -->
+  <div class="screen" id="screen-flight">
+    <div class="sky" id="sky"></div>
+    <div class="celestial" id="celestial"></div>
+    <div id="cloudLayer"></div>
+    <div class="flight-content">
+      <div class="flight-top">
+        <div class="flight-route-label"><span id="flRoute">ICN → NRT</span></div>
+        <button class="exit-btn" id="exitBtn">✕</button>
+      </div>
+      <div class="path-area">
+        <svg viewBox="0 0 400 140" preserveAspectRatio="none">
+          <path id="flightPath" d="M 24 110 Q 200 10 376 110" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="2" stroke-dasharray="2 8" stroke-linecap="round"/>
+        </svg>
+        <div id="planeIcon" style="position:absolute; left:0; top:0;">✈</div>
+      </div>
+      <div class="split-flap-wrap">
+        <div class="flap-group" id="mmGroup"></div>
+        <div class="flap-colon">:</div>
+        <div class="flap-group" id="ssGroup"></div>
+      </div>
+      <div class="flap-label">남은 시간</div>
+      <div class="readouts">
+        <div class="readout"><div class="val" id="roAlt">32,000</div><div class="lbl">고도(ft)</div></div>
+        <div class="readout"><div class="val" id="roSpd">860</div><div class="lbl">속도(km/h)</div></div>
+        <div class="readout"><div class="val" id="roDist">-</div><div class="lbl">남은거리(km)</div></div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="flProgress"></div></div>
+      <div class="flight-controls">
+        <button id="pauseBtn">일시정지</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN D: 착륙 -->
+  <div class="screen" id="screen-landing">
+    <div class="landing-wrap">
+      <div class="landing-emoji">🛬</div>
+      <h1 id="landRoute">착륙했습니다</h1>
+      <p class="sub2" id="landSub">수고하셨어요. 오늘의 비행 기록입니다.</p>
+      <div class="miles-card">
+        <div class="miles-row"><span class="k">이번 비행 마일리지</span><span class="v" id="earnedMiles">+0</span></div>
+        <div class="miles-row"><span class="k">누적 마일리지</span><span class="v" id="totalMiles">0</span></div>
+        <div class="miles-row"><span class="k">현재 등급</span><span class="v" id="currentTier">이코노미</span></div>
+        <div style="margin-top:10px;">
+          <div class="tier-track"><div class="tier-fill" id="tierFill" style="width:0%"></div></div>
+          <div class="tier-caption" id="tierCaption">다음 등급까지 500마일</div>
+        </div>
+      </div>
+      <div class="history">
+        <h3>최근 비행기록</h3>
+        <div id="historyList"></div>
+      </div>
+      <button class="primary-btn" id="againBtn" style="margin-top:18px;">다시 발권하기</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  // ---------------- 데이터 ----------------
+  const ROUTES = [
+    {from:'ICN',fromCity:'서울',to:'FUK',toCity:'후쿠오카',minutes:25,km:550},
+    {from:'ICN',fromCity:'서울',to:'KIX',toCity:'오사카',minutes:40,km:860},
+    {from:'ICN',fromCity:'서울',to:'NRT',toCity:'도쿄',minutes:50,km:1160},
+    {from:'ICN',fromCity:'서울',to:'PVG',toCity:'상하이',minutes:70,km:870},
+    {from:'ICN',fromCity:'서울',to:'SIN',toCity:'싱가포르',minutes:90,km:4700},
+    {from:'ICN',fromCity:'서울',to:'CDG',toCity:'파리',minutes:120,km:9000},
+  ];
+  const TIERS = [
+    {name:'이코노미', min:0},
+    {name:'프리미엄 이코노미', min:500},
+    {name:'비즈니스', min:1500},
+    {name:'퍼스트', min:3500},
+  ];
+  const STORAGE_KEY = 'focusflight_data_v1';
+
+  function loadData(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return {totalMiles:0, history:[]};
+  }
+  function saveData(d){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+  }
+  function getTier(miles){
+    let idx = 0;
+    for(let i=0;i<TIERS.length;i++){ if(miles>=TIERS[i].min) idx=i; }
+    return idx;
+  }
+
+  let data = loadData();
+
+  // ---------------- 화면 전환 ----------------
+  const screens = {
+    setup: document.getElementById('screen-setup'),
+    pass: document.getElementById('screen-pass'),
+    flight: document.getElementById('screen-flight'),
+    landing: document.getElementById('screen-landing'),
+  };
+  function goto(name){
+    Object.values(screens).forEach(s=>s.classList.remove('active'));
+    screens[name].classList.add('active');
+  }
+
+  function refreshTopTier(){
+    const idx = getTier(data.totalMiles);
+    document.getElementById('tierLabelTop').textContent = TIERS[idx].name;
+  }
+
+  // ---------------- SCREEN A: 노선 목록 ----------------
+  const routeListEl = document.getElementById('routeList');
+  let selectedRoute = null;
+
+  function renderRoutes(){
+    routeListEl.innerHTML = '';
+    ROUTES.forEach((r, i)=>{
+      const card = document.createElement('div');
+      card.className = 'route-card';
+      card.innerHTML = `
+        <div>
+          <div class="route-codes">${r.from} <span class="arrow">→</span> ${r.to}</div>
+          <div class="route-cities">${r.fromCity} · ${r.toCity}</div>
+        </div>
+        <div class="route-meta">
+          <div class="dur">${r.minutes}분</div>
+          <div class="km">${r.km.toLocaleString()}km</div>
+        </div>`;
+      card.addEventListener('click', ()=>{
+        selectedRoute = r;
+        [...routeListEl.children].forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        document.getElementById('issueBtn').disabled = false;
+      });
+      routeListEl.appendChild(card);
+    });
+  }
+  renderRoutes();
+  refreshTopTier();
+
+  // ---------------- SCREEN B: 탑승권 ----------------
+  let currentFlight = null; // {route, seat, cls, flightNo, gate}
+
+  document.getElementById('issueBtn').addEventListener('click', ()=>{
+    if(!selectedRoute) return;
+    const tierIdx = getTier(data.totalMiles);
+    const tierName = TIERS[tierIdx].name;
+    let seat;
+    if(tierIdx===0) seat = (20+Math.floor(Math.random()*20))+['A','B','C','D','E','F'][Math.floor(Math.random()*6)];
+    else if(tierIdx===1) seat = (12+Math.floor(Math.random()*8))+['A','C','D','F'][Math.floor(Math.random()*4)];
+    else if(tierIdx===2) seat = (4+Math.floor(Math.random()*6))+['A','D'][Math.floor(Math.random()*2)];
+    else seat = (1+Math.floor(Math.random()*3))+['A','K'][Math.floor(Math.random()*2)];
+
+    currentFlight = {
+      route: selectedRoute,
+      seat, cls: tierName,
+      flightNo: 'FF' + (100+Math.floor(Math.random()*900)),
+      gate: (1+Math.floor(Math.random()*30)),
+    };
+
+    document.getElementById('passFrom').textContent = selectedRoute.from;
+    document.getElementById('passFromCity').textContent = selectedRoute.fromCity.toUpperCase();
+    document.getElementById('passTo').textContent = selectedRoute.to;
+    document.getElementById('passToCity').textContent = selectedRoute.toCity.toUpperCase();
+    document.getElementById('passFlightNo').textContent = currentFlight.flightNo;
+    document.getElementById('passGate').textContent = currentFlight.gate;
+    document.getElementById('passSeat').textContent = seat;
+    document.getElementById('passClass').textContent = tierName.toUpperCase();
+    document.getElementById('passDur').textContent = selectedRoute.minutes + '분';
+    const now = new Date();
+    document.getElementById('passTime').textContent =
+      String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+
+    goto('pass');
+  });
+
+  document.getElementById('backBtn').addEventListener('click', ()=>goto('setup'));
+
+  // ---------------- SCREEN C: 비행 ----------------
+  const skyEl = document.getElementById('sky');
+  const celestialEl = document.getElementById('celestial');
+  const cloudLayer = document.getElementById('cloudLayer');
+  const planeIcon = document.getElementById('planeIcon');
+  const flightPath = document.getElementById('flightPath');
+  const flProgress = document.getElementById('flProgress');
+  const roAlt = document.getElementById('roAlt');
+  const roSpd = document.getElementById('roSpd');
+  const roDist = document.getElementById('roDist');
+  const mmGroup = document.getElementById('mmGroup');
+  const ssGroup = document.getElementById('ssGroup');
+
+  // 스카이 키프레임: [progress, hexColorTop, hexColorBottom]
+  const SKY_STOPS = [
+    [0.00, '#0B1626', '#1B2A44'],
+    [0.12, '#3A2E52', '#5A3F52'],
+    [0.28, '#E8825A', '#4FA6D8'],
+    [0.50, '#3E93CE', '#7FC4E8'],
+    [0.72, '#E8825A', '#5A3F52'],
+    [0.88, '#3A2E52', '#1B2A44'],
+    [1.00, '#0B1626', '#1B2A44'],
+  ];
+  function hexToRgb(h){h=h.replace('#','');return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
+  function lerp(a,b,t){return Math.round(a+(b-a)*t);}
+  function lerpHex(h1,h2,t){
+    const a=hexToRgb(h1), b=hexToRgb(h2);
+    return `rgb(${lerp(a[0],b[0],t)},${lerp(a[1],b[1],t)},${lerp(a[2],b[2],t)})`;
+  }
+  function applySky(progress){
+    let s0=SKY_STOPS[0], s1=SKY_STOPS[SKY_STOPS.length-1];
+    for(let i=0;i<SKY_STOPS.length-1;i++){
+      if(progress>=SKY_STOPS[i][0] && progress<=SKY_STOPS[i+1][0]){
+        s0=SKY_STOPS[i]; s1=SKY_STOPS[i+1]; break;
+      }
+    }
+    const span = s1[0]-s0[0] || 1;
+    const t = (progress - s0[0]) / span;
+    const top = lerpHex(s0[1], s1[1], t);
+    const bottom = lerpHex(s0[2], s1[2], t);
+    skyEl.style.background = `linear-gradient(180deg, ${top} 0%, ${bottom} 100%)`;
+
+    // 태양/달: 진행률에 따라 포물선 궤도, 밤 구간엔 흐리게
+    const arcT = progress; // 0..1
+    const x = 10 + arcT*80; // %
+    const y = 85 - Math.sin(arcT*Math.PI)*55; // %
+    celestialEl.style.left = x+'%';
+    celestialEl.style.top = y+'%';
+    const isNight = progress < 0.08 || progress > 0.92;
+    celestialEl.style.opacity = isNight ? '0.25' : '1';
+  }
+
+  function spawnClouds(){
+    cloudLayer.innerHTML = '';
+    const count = 6;
+    for(let i=0;i<count;i++){
+      const c = document.createElement('div');
+      c.className = 'cloud';
+      const w = 60 + Math.random()*90;
+      const h = w*0.4;
+      c.style.width = w+'px';
+      c.style.height = h+'px';
+      c.style.top = (10+Math.random()*60)+'%';
+      const dur = 18 + Math.random()*22;
+      c.style.animationDuration = dur+'s';
+      c.style.animationDelay = (-Math.random()*dur)+'s';
+      c.style.opacity = (0.4+Math.random()*0.4).toFixed(2);
+      cloudLayer.appendChild(c);
+    }
+  }
+
+  function buildFlaps(container, digitCount){
+    container.innerHTML='';
+    const flaps=[];
+    for(let i=0;i<digitCount;i++){
+      const f=document.createElement('div');
+      f.className='flap';
+      f.textContent='0';
+      container.appendChild(f);
+      flaps.push(f);
+    }
+    return flaps;
+  }
+  let mmFlaps = buildFlaps(mmGroup, 2);
+  let ssFlaps = buildFlaps(ssGroup, 2);
+  let lastMM = null, lastSS = null;
+
+  function updateFlaps(flaps, str, lastStr){
+    for(let i=0;i<flaps.length;i++){
+      if(!lastStr || lastStr[i]!==str[i]){
+        flaps[i].classList.remove('flip');
+        void flaps[i].offsetWidth; // reflow to restart animation
+        flaps[i].classList.add('flip');
+        flaps[i].textContent = str[i];
+      }
+    }
+  }
+
+  let flightTimer = null;
+  let totalSeconds = 0;
+  let remainingSeconds = 0;
+  let paused = false;
+
+  let pathLen = 0;
+  function layoutPath(){
+    pathLen = flightPath.getTotalLength();
+  }
+
+  function updatePlanePosition(progress){
+    const areaW = document.querySelector('.path-area').clientWidth;
+    const areaH = document.querySelector('.path-area').clientHeight;
+    const pt = flightPath.getPointAtLength(progress*pathLen);
+    const nextPt = flightPath.getPointAtLength(Math.min(progress+0.01,1)*pathLen);
+    const angle = Math.atan2(nextPt.y-pt.y, nextPt.x-pt.x) * 180/Math.PI;
+    // SVG viewBox is 400x140, scale to actual box
+    const scaleX = areaW/400, scaleY = areaH/140;
+    planeIcon.style.left = (pt.x*scaleX - 11)+'px';
+    planeIcon.style.top = (pt.y*scaleY - 11)+'px';
+    planeIcon.style.transform = `rotate(${angle+90}deg)`;
+  }
+
+  function tick(){
+    if(paused) return;
+    remainingSeconds--;
+    if(remainingSeconds < 0){ finishFlight(); return; }
+    renderFlightState();
+  }
+
+  function renderFlightState(){
+    const progress = 1 - (remainingSeconds/totalSeconds);
+    const mm = Math.floor(remainingSeconds/60);
+    const ss = remainingSeconds%60;
+    const mmStr = String(mm).padStart(2,'0');
+    const ssStr = String(ss).padStart(2,'0');
+    updateFlaps(mmFlaps, mmStr, lastMM);
+    updateFlaps(ssFlaps, ssStr, lastSS);
+    lastMM = mmStr; lastSS = ssStr;
+
+    flProgress.style.width = (progress*100).toFixed(1)+'%';
+    applySky(progress);
+    updatePlanePosition(progress);
+
+    // readouts (연출용 수치)
+    const cruiseP = Math.min(1, progress/0.15);
+    const descP = Math.min(1, (1-progress)/0.15);
+    const altFactor = Math.min(cruiseP, descP);
+    roAlt.textContent = Math.round(altFactor*32000).toLocaleString();
+    roSpd.textContent = Math.round(200 + altFactor*660).toLocaleString();
+    const remainKm = Math.round(currentFlight.route.km * (1-progress));
+    roDist.textContent = remainKm.toLocaleString();
+  }
+
+  function startFlight(){
+    totalSeconds = currentFlight.route.minutes*60;
+    remainingSeconds = totalSeconds;
+    paused = false;
+    document.getElementById('pauseBtn').textContent = '일시정지';
+    document.getElementById('flRoute').textContent = `${currentFlight.route.from} → ${currentFlight.route.to}`;
+    lastMM = null; lastSS = null;
+    spawnClouds();
+    goto('flight');
+    requestAnimationFrame(()=>{
+      layoutPath();
+      renderFlightState();
+    });
+    clearInterval(flightTimer);
+    flightTimer = setInterval(tick, 1000);
+  }
+
+  document.getElementById('boardBtn').addEventListener('click', startFlight);
+
+  document.getElementById('pauseBtn').addEventListener('click', ()=>{
+    paused = !paused;
+    document.getElementById('pauseBtn').textContent = paused ? '재개' : '일시정지';
+  });
+
+  document.getElementById('exitBtn').addEventListener('click', ()=>{
+    const ok = confirm('지금 착륙하지 않고 나가면 이번 비행의 마일리지를 받지 못해요. 나가시겠어요?');
+    if(ok){
+      clearInterval(flightTimer);
+      goto('setup');
+    }
+  });
+
+  function finishFlight(){
+    clearInterval(flightTimer);
+    const route = currentFlight.route;
+    const miles = Math.round(route.km/10);
+    data.totalMiles += miles;
+    data.history.unshift({
+      route: `${route.from} → ${route.to}`,
+      minutes: route.minutes,
+      miles,
+      date: new Date().toLocaleDateString('ko-KR', {month:'short', day:'numeric'}),
+    });
+    data.history = data.history.slice(0, 8);
+    saveData(data);
+    renderLanding(miles, route);
+    goto('landing');
+    refreshTopTier();
+  }
+
+  // ---------------- SCREEN D: 착륙 ----------------
+  function renderLanding(earned, route){
+    document.getElementById('landRoute').textContent = `${route.to} 착륙 완료`;
+    document.getElementById('earnedMiles').textContent = '+'+earned.toLocaleString();
+    document.getElementById('totalMiles').textContent = data.totalMiles.toLocaleString();
+
+    const idx = getTier(data.totalMiles);
+    const tier = TIERS[idx];
+    document.getElementById('currentTier').textContent = tier.name;
+
+    const next = TIERS[idx+1];
+    const fillEl = document.getElementById('tierFill');
+    const capEl = document.getElementById('tierCaption');
+    if(next){
+      const span = next.min - tier.min;
+      const into = data.totalMiles - tier.min;
+      fillEl.style.width = Math.min(100, (into/span*100)).toFixed(0)+'%';
+      capEl.textContent = `${next.name}까지 ${(next.min-data.totalMiles).toLocaleString()}마일`;
+    } else {
+      fillEl.style.width = '100%';
+      capEl.textContent = '최고 등급 달성 · 퍼스트클래스';
+    }
+
+    const histEl = document.getElementById('historyList');
+    histEl.innerHTML = '';
+    if(data.history.length===0){
+      histEl.innerHTML = '<div style="color:#6b7280; font-size:12.5px; padding:8px 2px;">아직 기록이 없어요.</div>';
+    }
+    data.history.forEach(h=>{
+      const row = document.createElement('div');
+      row.className = 'history-item';
+      row.innerHTML = `<span class="r">${h.route}</span><span class="d">${h.date} · ${h.minutes}분</span><span class="m">+${h.miles}</span>`;
+      histEl.appendChild(row);
+    });
+  }
+
+  document.getElementById('againBtn').addEventListener('click', ()=>{
+    selectedRoute = null;
+    document.getElementById('issueBtn').disabled = true;
+    [...routeListEl.children].forEach(c=>c.classList.remove('selected'));
+    goto('setup');
+  });
+
+  window.addEventListener('resize', ()=>{ if(screens.flight.classList.contains('active')){ layoutPath(); } });
+
+})();
+</script>
+</body>
+</html>
