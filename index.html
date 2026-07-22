@@ -142,8 +142,6 @@
   .window-canvas{position:absolute; inset:0; width:100%; height:100%; opacity:0; transition:opacity .4s;}
   .window-canvas.show{opacity:1;}
   .window-tint{position:absolute; inset:0; mix-blend-mode:multiply; transition:background .6s linear; pointer-events:none;}
-  .window-cloud{position:absolute; z-index:3; opacity:0.8; background:rgba(255,255,255,0.85); border-radius:50px; filter:blur(0.5px); animation:drift linear infinite;}
-  @keyframes drift{from{transform:translateX(160%);} to{transform:translateX(-160%);}}
   .window-sun{position:absolute; width:24px; height:24px; border-radius:50%; z-index:2; background:radial-gradient(circle at 35% 35%, #FFF6D8, #F4D06A 60%, #E8B93A); box-shadow:0 0 24px 6px rgba(244,208,106,0.4); transition:opacity .6s;}
   .window-attrib{position:absolute; bottom:3px; right:6px; font-size:7.5px; color:rgba(255,255,255,0.4); z-index:4;}
 
@@ -233,7 +231,7 @@
     <div class="footer-note">
       화면을 켜둔 채 이 앱을 보고 있는 동안 세션이 진행됩니다.<br>기기의 다른 앱을 자동으로 막지는 못해요.
     </div>
-    <div class="version-tag">FocusFlight v1.2.0</div>
+    <div class="version-tag">FocusFlight v1.5.0</div>
   </div>
 
   <!-- SCREEN A2: 좌석 선택 -->
@@ -304,7 +302,6 @@
           <canvas class="window-canvas" id="routesCanvas"></canvas>
           <div class="window-tint" id="windowTint"></div>
           <div class="window-sun" id="windowSun"></div>
-          <div id="cloudLayer"></div>
           <div class="window-attrib" id="windowAttrib">Esri</div>
           <div class="window-status" id="windowStatus"></div>
         </div>
@@ -624,7 +621,6 @@
   const windowAttrib = document.getElementById('windowAttrib');
   const mapTint = document.getElementById('mapTint');
   const windowStatus = document.getElementById('windowStatus');
-  const cloudLayer = document.getElementById('cloudLayer');
   let lastProgress = 0;
 
   function applyWindowMode(){
@@ -815,21 +811,6 @@
   }
 
 
-  function spawnClouds(){
-    cloudLayer.innerHTML = '';
-    for(let i=0;i<5;i++){
-      const c = document.createElement('div');
-      c.className = 'window-cloud';
-      const w = 50 + Math.random()*70, h = w*0.4;
-      c.style.width = w+'px'; c.style.height = h+'px';
-      c.style.top = (10+Math.random()*70)+'%';
-      const dur = 14 + Math.random()*18;
-      c.style.animationDuration = dur+'s';
-      c.style.animationDelay = (-Math.random()*dur)+'s';
-      c.style.opacity = (0.35+Math.random()*0.35).toFixed(2);
-      cloudLayer.appendChild(c);
-    }
-  }
   function buildFlaps(container, n){
     container.innerHTML='';
     const flaps=[];
@@ -899,7 +880,6 @@
     document.getElementById('pauseBtn').textContent = '일시정지';
     document.getElementById('flRoute').textContent = `${currentFlight.route.from} → ${currentFlight.route.to}`;
     lastMM=null; lastSS=null;
-    spawnClouds();
     goto('flight');
     requestAnimationFrame(renderFlightState);
     clearInterval(flightTimer);
