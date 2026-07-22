@@ -12,287 +12,143 @@
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --night:#0B1626;
-    --dawn:#3A2E52;
-    --horizon:#E8825A;
-    --day:#4FA6D8;
-    --cloud:#F4F6FA;
-    --brass:#C9A227;
-    --brass-soft:#E7CE7B;
-    --parchment:#EDE6D3;
-    --parchment-2:#E3D9BE;
-    --ink:#1B2430;
-    --ink-soft:#5A6270;
-    --cabin:#14171C;
-    --cabin-2:#1D2129;
+    --night:#0B1626; --dawn:#3A2E52; --horizon:#E8825A; --day:#4FA6D8;
+    --cloud:#F4F6FA; --brass:#C9A227; --brass-soft:#E7CE7B;
+    --parchment:#EDE6D3; --ink:#1B2430; --ink-soft:#5A6270;
+    --cabin:#14171C; --cabin-2:#1D2129;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{
-    margin:0; padding:0; height:100%;
-    background:var(--night);
-    color:var(--cloud);
-    font-family:'Inter',sans-serif;
-    overflow:hidden;
-    overscroll-behavior:none;
-  }
-  #app{
-    position:fixed; inset:0;
-    display:flex; flex-direction:column;
-    max-width:480px; margin:0 auto;
-    background:var(--night);
-  }
-  .screen{
-    flex:1; display:none; flex-direction:column;
-    padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom);
-    overflow-y:auto;
-  }
+  html,body{margin:0; padding:0; height:100%; background:var(--night); color:var(--cloud); font-family:'Inter',sans-serif; overflow:hidden; overscroll-behavior:none;}
+  #app{position:fixed; inset:0; display:flex; flex-direction:column; max-width:480px; margin:0 auto; background:var(--night);}
+  .screen{flex:1; display:none; flex-direction:column; padding:env(safe-area-inset-top) 20px 0; overflow-y:auto;}
   .screen.active{display:flex;}
+  .screen.hub{padding-bottom:78px;}
 
-  /* ---------- top status bar (app chrome) ---------- */
-  .topbar{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:14px 4px 10px;
-    flex-shrink:0;
-  }
-  .brand{
-    font-family:'Big Shoulders Display', sans-serif;
-    font-weight:800; font-size:20px; letter-spacing:0.5px;
-    color:var(--cloud);
-  }
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:14px 4px 10px; flex-shrink:0;}
+  .brand{font-family:'Big Shoulders Display', sans-serif; font-weight:800; font-size:20px; letter-spacing:0.5px; color:var(--cloud);}
   .brand span{color:var(--brass-soft);}
-  .status-pill{
-    display:flex; align-items:center; gap:6px;
-    background:rgba(255,255,255,0.06);
-    border:1px solid rgba(201,162,39,0.4);
-    padding:6px 12px; border-radius:999px;
-    font-family:'JetBrains Mono',monospace;
-    font-size:12px; color:var(--brass-soft);
-  }
+  .status-pill{display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(201,162,39,0.4); padding:6px 12px; border-radius:999px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--brass-soft);}
   .status-pill b{color:var(--cloud); font-weight:700;}
 
-  /* ---------- SCREEN A: route select ---------- */
-  #screen-setup h1{
-    font-family:'Big Shoulders Display', sans-serif;
-    font-weight:800; font-size:34px; line-height:1.05;
-    margin:6px 0 4px; color:var(--cloud);
-  }
-  #screen-setup p.sub{
-    color:#9AA5B4; font-size:13.5px; margin:0 0 18px; line-height:1.5;
-  }
-  .route-list{display:flex; flex-direction:column; gap:10px; padding-bottom:4px;}
-  .route-card{
-    display:flex; align-items:center; justify-content:space-between;
-    background:rgba(255,255,255,0.05);
-    border:1.5px solid rgba(255,255,255,0.08);
-    border-radius:16px; padding:14px 16px;
-    cursor:pointer; transition:.15s;
-  }
-  .route-card.selected{
-    border-color:var(--brass); background:rgba(201,162,39,0.12);
-  }
-  .route-codes{
-    font-family:'Big Shoulders Display', sans-serif;
-    font-weight:800; font-size:22px; display:flex; align-items:center; gap:8px;
-  }
+  h1.page-title{font-family:'Big Shoulders Display', sans-serif; font-weight:800; font-size:30px; line-height:1.05; margin:6px 0 4px; color:var(--cloud);}
+  p.sub{color:#9AA5B4; font-size:13.5px; margin:0 0 16px; line-height:1.5;}
+  .section-label{font-size:11px; letter-spacing:1.5px; color:#7d8695; text-transform:uppercase; font-weight:700; margin:18px 0 10px;}
+
+  .route-list{display:flex; flex-direction:column; gap:10px;}
+  .route-card{display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px 16px; cursor:pointer; transition:.15s;}
+  .route-card.selected{border-color:var(--brass); background:rgba(201,162,39,0.12);}
+  .route-codes{font-family:'Big Shoulders Display', sans-serif; font-weight:800; font-size:22px; display:flex; align-items:center; gap:8px;}
   .route-codes .arrow{color:var(--brass-soft); font-size:16px;}
   .route-cities{font-size:11.5px; color:#8B93A3; margin-top:2px; font-weight:500;}
   .route-meta{text-align:right;}
-  .route-meta .dur{
-    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:15px; color:var(--brass-soft);
-  }
+  .route-meta .dur{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:15px; color:var(--brass-soft);}
   .route-meta .km{font-size:11px; color:#8B93A3; margin-top:2px;}
 
-  .section-label{
-    font-size:11px; letter-spacing:1.5px; color:#7d8695; text-transform:uppercase;
-    font-weight:700; margin:20px 0 10px;
-  }
-  .chip-row{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:4px;}
+  .chip-row{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;}
   .chip-row::-webkit-scrollbar{display:none;}
-  .chip{
-    flex:0 0 auto; padding:9px 14px; border-radius:999px;
-    background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.1);
-    font-size:13px; color:#C7CDD6; white-space:nowrap; cursor:pointer;
-  }
+  .chip{flex:0 0 auto; padding:9px 14px; border-radius:999px; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.1); font-size:13px; color:#C7CDD6; white-space:nowrap; cursor:pointer;}
   .chip.selected{background:rgba(201,162,39,0.18); border-color:var(--brass); color:var(--brass-soft); font-weight:600;}
 
-  .primary-btn{
-    display:block; width:100%; border:none; border-radius:14px;
-    padding:16px; margin-top:16px;
-    background:var(--brass); color:#1B1400;
-    font-family:'Inter',sans-serif; font-weight:700; font-size:15.5px;
-    cursor:pointer; transition:.15s;
-  }
+  .primary-btn{display:block; width:100%; border:none; border-radius:14px; padding:16px; margin-top:16px; background:var(--brass); color:#1B1400; font-family:'Inter',sans-serif; font-weight:700; font-size:15.5px; cursor:pointer; transition:.15s;}
   .primary-btn:disabled{background:#3a3f2f; color:#6b6f60; cursor:not-allowed;}
   .primary-btn:active:not(:disabled){transform:scale(0.98);}
-  .ghost-btn{
-    display:block; width:100%; border:1.5px solid rgba(255,255,255,0.18);
-    border-radius:14px; padding:14px; margin-top:10px;
-    background:transparent; color:#C7CDD6;
-    font-family:'Inter',sans-serif; font-weight:600; font-size:14.5px;
-    cursor:pointer;
-  }
+  .ghost-btn{display:block; width:100%; border:1.5px solid rgba(255,255,255,0.18); border-radius:14px; padding:14px; margin-top:10px; background:transparent; color:#C7CDD6; font-family:'Inter',sans-serif; font-weight:600; font-size:14.5px; cursor:pointer;}
 
-  /* ---------- SCREEN B: boarding pass ---------- */
+  .live-card{display:flex; align-items:center; justify-content:space-between; background:linear-gradient(135deg,#20293a,#161c27); border:1px solid rgba(201,162,39,0.4); border-radius:16px; padding:14px 16px; margin-bottom:16px; cursor:pointer;}
+  .live-card .l1{font-size:11px; color:var(--brass-soft); letter-spacing:1px; font-weight:700; text-transform:uppercase;}
+  .live-card .l2{font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:19px; margin-top:2px;}
+  .live-card .l3{font-family:'JetBrains Mono',monospace; font-size:13px; color:#9AA5B4; margin-top:2px;}
+  .live-card .arrow-ico{font-size:20px; color:var(--brass-soft);}
+
+  /* ---------- 좌석 선택 ---------- */
+  .seat-legend{display:flex; gap:14px; margin-bottom:14px; font-size:11.5px; color:#9AA5B4;}
+  .seat-legend span{display:inline-flex; align-items:center; gap:5px;}
+  .legend-box{width:12px; height:12px; border-radius:3px; display:inline-block;}
+  .seat-map{display:flex; flex-direction:column; gap:8px; padding-bottom:8px;}
+  .seat-row{display:flex; align-items:center; gap:6px;}
+  .seat-row .rownum{width:22px; font-family:'JetBrains Mono',monospace; font-size:11px; color:#6b7280; flex-shrink:0;}
+  .seat-btn{
+    flex:1; aspect-ratio:1; max-width:38px; border-radius:8px; border:1.5px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.05); color:#C7CDD6; font-family:'JetBrains Mono',monospace; font-size:11px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .seat-btn.occupied{background:rgba(255,255,255,0.02); border-color:rgba(255,255,255,0.05); color:#3d4653; cursor:not-allowed;}
+  .seat-btn.selected{background:var(--brass); border-color:var(--brass); color:#1B1400; font-weight:700;}
+  .seat-aisle{width:14px; flex:0 0 14px;}
+  .seat-summary{display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.05); border-radius:14px; padding:14px 16px; margin:14px 0;}
+  .seat-summary .big{font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:26px; color:var(--brass-soft);}
+
+  /* ---------- 탑승권 ---------- */
   #screen-pass{align-items:center; justify-content:center;}
   .pass-wrap{width:100%; max-width:360px;}
-  .pass-eyebrow{
-    text-align:center; font-size:12px; letter-spacing:2px; color:var(--brass-soft);
-    font-weight:700; margin-bottom:14px; text-transform:uppercase;
-  }
-  .boarding-pass{
-    background:var(--parchment); color:var(--ink);
-    border-radius:18px; overflow:hidden;
-    box-shadow:0 20px 40px rgba(0,0,0,0.35);
-  }
+  .pass-eyebrow{text-align:center; font-size:12px; letter-spacing:2px; color:var(--brass-soft); font-weight:700; margin-bottom:14px; text-transform:uppercase;}
+  .boarding-pass{background:var(--parchment); color:var(--ink); border-radius:18px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.35);}
   .bp-top{padding:20px 20px 16px;}
   .bp-route{display:flex; align-items:center; justify-content:space-between;}
   .bp-code{font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:38px; line-height:1;}
   .bp-city{font-size:11px; color:var(--ink-soft); font-weight:600; margin-top:2px;}
   .bp-plane{font-size:20px; color:var(--brass); transform:rotate(90deg); margin:0 6px;}
-  .bp-grid{
-    display:grid; grid-template-columns:repeat(3,1fr); gap:14px;
-    margin-top:18px; padding-top:14px; border-top:1px dashed rgba(27,36,48,0.25);
-  }
-  .bp-field label{
-    display:block; font-size:9.5px; letter-spacing:1px; color:var(--ink-soft);
-    font-weight:700; text-transform:uppercase; margin-bottom:3px;
-  }
+  .bp-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:18px; padding-top:14px; border-top:1px dashed rgba(27,36,48,0.25);}
+  .bp-field label{display:block; font-size:9.5px; letter-spacing:1px; color:var(--ink-soft); font-weight:700; text-transform:uppercase; margin-bottom:3px;}
   .bp-field span{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px;}
-  .bp-perf{
-    position:relative; height:0; border-top:2px dashed rgba(27,36,48,0.3);
-    margin:0 -1px;
-  }
-  .bp-perf::before,.bp-perf::after{
-    content:''; position:absolute; top:-11px; width:22px; height:22px;
-    background:var(--night); border-radius:50%;
-  }
-  .bp-perf::before{left:-11px;}
-  .bp-perf::after{right:-11px;}
+  .bp-perf{position:relative; height:0; border-top:2px dashed rgba(27,36,48,0.3); margin:0 -1px;}
+  .bp-perf::before,.bp-perf::after{content:''; position:absolute; top:-11px; width:22px; height:22px; background:var(--night); border-radius:50%;}
+  .bp-perf::before{left:-11px;} .bp-perf::after{right:-11px;}
   .bp-bottom{padding:16px 20px 20px; display:flex; justify-content:space-between; align-items:center;}
-  .bp-bottom .bp-field span{font-size:16px;}
-  .bp-barcode{
-    height:32px; width:90px;
-    background:repeating-linear-gradient(90deg,var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 6px, transparent 6px 9px);
-    opacity:0.75;
-  }
+  .bp-barcode{height:32px; width:90px; background:repeating-linear-gradient(90deg,var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 6px, transparent 6px 9px); opacity:0.75;}
 
-  /* ---------- SCREEN C: in-flight (cabin + window) ---------- */
+  .boarding-pass.mini{transform-origin:top left; margin-bottom:12px;}
+  .boarding-pass.mini .bp-top{padding:14px 16px 12px;}
+  .boarding-pass.mini .bp-code{font-size:26px;}
+  .boarding-pass.mini .bp-grid{gap:10px; margin-top:12px; padding-top:10px;}
+  .boarding-pass.mini .bp-field span{font-size:12px;}
+  .boarding-pass.mini .bp-bottom{padding:10px 16px 14px;}
+  .boarding-pass.mini .bp-barcode{height:22px; width:64px;}
+  .mini-note{padding:0 16px 14px; margin-top:-6px; font-size:11.5px; color:var(--ink-soft); line-height:1.4;}
+
+  /* ---------- 비행 중 ---------- */
   #screen-flight{padding:0; position:relative; background:radial-gradient(ellipse at 50% 0%, var(--cabin-2), var(--cabin) 70%);}
-  .flight-content{
-    position:relative; z-index:2;
-    display:flex; flex-direction:column; height:100%; align-items:center;
-    padding:calc(env(safe-area-inset-top) + 14px) 20px env(safe-area-inset-bottom);
-  }
+  .flight-content{position:relative; z-index:2; display:flex; flex-direction:column; height:100%; align-items:center; padding:calc(env(safe-area-inset-top) + 14px) 20px env(safe-area-inset-bottom);}
   .flight-top{display:flex; justify-content:space-between; align-items:center; width:100%;}
-  .flight-route-label{
-    font-family:'JetBrains Mono',monospace; font-size:13px; color:rgba(255,255,255,0.85);
-    background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:999px;
-    display:flex; gap:8px; align-items:center;
-  }
-  .exit-btn{
-    background:rgba(255,255,255,0.08); border:none; color:#fff; width:32px; height:32px;
-    border-radius:50%; font-size:15px; cursor:pointer;
-  }
+  .flight-route-label{font-family:'JetBrains Mono',monospace; font-size:13px; color:rgba(255,255,255,0.85); background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:999px; display:flex; gap:8px; align-items:center;}
+  .exit-btn{background:rgba(255,255,255,0.08); border:none; color:#fff; width:32px; height:32px; border-radius:50%; font-size:15px; cursor:pointer;}
 
-  /* airplane window */
-  .window-shell{
-    width:min(72vw, 300px); aspect-ratio:3/4; margin:16px auto 6px;
-    border-radius:46% 46% 44% 44% / 38% 38% 42% 42%;
-    background:#0a0c10;
-    padding:14px;
-    box-shadow:0 18px 40px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(255,255,255,0.04);
-    flex-shrink:0;
-  }
-  .window-frame{
-    position:relative; width:100%; height:100%;
-    border-radius:44% 44% 42% 42% / 36% 36% 40% 40%;
-    overflow:hidden;
-    border:7px solid #e8e6e0;
-    box-shadow:inset 0 0 24px rgba(0,0,0,0.55), 0 0 0 2px #b9b6ac;
-  }
+  .window-shell{width:min(70vw, 280px); aspect-ratio:3/4; margin:14px auto 6px; border-radius:46% 46% 44% 44% / 38% 38% 42% 42%; background:#0a0c10; padding:14px; box-shadow:0 18px 40px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(255,255,255,0.04); flex-shrink:0;}
+  .window-frame{position:relative; width:100%; height:100%; border-radius:44% 44% 42% 42% / 36% 36% 40% 40%; overflow:hidden; border:7px solid #e8e6e0; box-shadow:inset 0 0 24px rgba(0,0,0,0.55), 0 0 0 2px #b9b6ac;}
   .window-sky{position:absolute; inset:0; transition:background .6s linear;}
-  .window-sat{
-    position:absolute; inset:0; width:100%; height:100%;
-    object-fit:cover; opacity:0; transition:opacity .5s ease;
-  }
+  .window-sat{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .5s ease, filter .3s;}
   .window-sat.loaded{opacity:0.92;}
   .window-tint{position:absolute; inset:0; mix-blend-mode:multiply; transition:background .6s linear; pointer-events:none;}
-  .window-cloud{
-    position:absolute; z-index:3; opacity:0.8;
-    background:rgba(255,255,255,0.85);
-    border-radius:50px; filter:blur(0.5px);
-    animation:drift linear infinite;
-  }
-  @keyframes drift{
-    from{transform:translateX(160%);}
-    to{transform:translateX(-160%);}
-  }
-  .window-sun{
-    position:absolute; width:26px; height:26px; border-radius:50%; z-index:2;
-    background:radial-gradient(circle at 35% 35%, #FFF6D8, #F4D06A 60%, #E8B93A);
-    box-shadow:0 0 24px 6px rgba(244,208,106,0.4);
-    transition:opacity .6s;
-  }
-  .window-attrib{
-    position:absolute; bottom:3px; right:6px; font-size:7.5px; color:rgba(255,255,255,0.4); z-index:4;
-  }
+  .window-cloud{position:absolute; z-index:3; opacity:0.8; background:rgba(255,255,255,0.85); border-radius:50px; filter:blur(0.5px); animation:drift linear infinite;}
+  @keyframes drift{from{transform:translateX(160%);} to{transform:translateX(-160%);}}
+  .window-sun{position:absolute; width:24px; height:24px; border-radius:50%; z-index:2; background:radial-gradient(circle at 35% 35%, #FFF6D8, #F4D06A 60%, #E8B93A); box-shadow:0 0 24px 6px rgba(244,208,106,0.4); transition:opacity .6s;}
+  .window-attrib{position:absolute; bottom:3px; right:6px; font-size:7.5px; color:rgba(255,255,255,0.4); z-index:4;}
 
-  .split-flap-wrap{display:flex; justify-content:center; align-items:baseline; gap:10px; margin:10px 0 4px;}
+  .split-flap-wrap{display:flex; justify-content:center; align-items:baseline; gap:10px; margin:8px 0 4px;}
   .flap-group{display:flex; gap:4px;}
-  .flap{
-    width:40px; height:54px; background:rgba(255,255,255,0.06);
-    border-radius:8px; display:flex; align-items:center; justify-content:center;
-    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:30px; color:#fff;
-    border:1px solid rgba(255,255,255,0.13);
-    position:relative; overflow:hidden;
-  }
+  .flap{width:38px; height:50px; background:rgba(255,255,255,0.06); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:28px; color:#fff; border:1px solid rgba(255,255,255,0.13); position:relative; overflow:hidden;}
   .flap.flip{animation:flipDigit .32s ease-in-out;}
-  @keyframes flipDigit{
-    0%{transform:rotateX(0deg);}
-    50%{transform:rotateX(90deg); opacity:.4;}
-    100%{transform:rotateX(0deg); opacity:1;}
-  }
-  .flap-colon{font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700; color:rgba(255,255,255,0.6);}
+  @keyframes flipDigit{0%{transform:rotateX(0deg);} 50%{transform:rotateX(90deg); opacity:.4;} 100%{transform:rotateX(0deg); opacity:1;}}
+  .flap-colon{font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:700; color:rgba(255,255,255,0.6);}
   .flap-label{text-align:center; font-size:10px; letter-spacing:2px; color:rgba(255,255,255,0.5); margin-top:2px; text-transform:uppercase;}
 
-  .readouts{
-    display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; width:100%;
-  }
-  .readout{
-    background:rgba(255,255,255,0.04); border-radius:12px; padding:9px 6px; text-align:center;
-    border:1px solid rgba(255,255,255,0.07);
-  }
-  .readout .val{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px;}
-  .readout .lbl{font-size:9px; color:rgba(255,255,255,0.5); margin-top:2px; letter-spacing:1px;}
+  .readouts{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; width:100%;}
+  .readout{background:rgba(255,255,255,0.04); border-radius:12px; padding:8px 6px; text-align:center; border:1px solid rgba(255,255,255,0.07);}
+  .readout .val{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:13px;}
+  .readout .lbl{font-size:8.5px; color:rgba(255,255,255,0.5); margin-top:2px; letter-spacing:1px;}
 
-  .progress-track{
-    height:5px; background:rgba(255,255,255,0.13); border-radius:99px; margin-top:14px; overflow:hidden; width:100%;
-  }
-  .progress-fill{
-    height:100%; background:linear-gradient(90deg,var(--brass-soft),var(--brass));
-    width:0%; transition:width .5s linear;
-  }
-
-  .flight-controls{display:flex; gap:10px; margin-top:14px; padding-bottom:6px; width:100%;}
-  .flight-controls button{
-    flex:1; border:none; border-radius:12px; padding:12px; font-weight:700; font-size:14px;
-    font-family:'Inter',sans-serif; cursor:pointer;
-  }
+  .progress-track{height:5px; background:rgba(255,255,255,0.13); border-radius:99px; margin-top:12px; overflow:hidden; width:100%;}
+  .progress-fill{height:100%; background:linear-gradient(90deg,var(--brass-soft),var(--brass)); width:0%; transition:width .5s linear;}
+  .flight-controls{display:flex; gap:10px; margin-top:12px; padding-bottom:6px; width:100%;}
+  .flight-controls button{flex:1; border:none; border-radius:12px; padding:12px; font-weight:700; font-size:14px; font-family:'Inter',sans-serif; cursor:pointer;}
   #pauseBtn{background:rgba(255,255,255,0.15); color:#fff;}
 
-  /* ---------- SCREEN D: landing ---------- */
+  /* ---------- 착륙 ---------- */
   #screen-landing{align-items:center; justify-content:center; text-align:center;}
   .landing-wrap{width:100%;}
   .landing-emoji{font-size:44px; margin-bottom:6px;}
-  #screen-landing h1{
-    font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:30px; margin:4px 0 2px;
-  }
-  #screen-landing p.sub2{color:#9AA5B4; font-size:13.5px; margin:0 0 20px;}
-  .miles-card{
-    background:linear-gradient(135deg,#1a2436,#131b29);
-    border:1px solid rgba(201,162,39,0.35);
-    border-radius:18px; padding:20px; text-align:left; margin-bottom:14px;
-  }
+  #screen-landing h1{font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:30px; margin:4px 0 2px;}
+  .miles-card{background:linear-gradient(135deg,#1a2436,#131b29); border:1px solid rgba(201,162,39,0.35); border-radius:18px; padding:20px; text-align:left; margin-bottom:14px;}
   .miles-row{display:flex; justify-content:space-between; align-items:center; padding:8px 0;}
   .miles-row:not(:last-child){border-bottom:1px solid rgba(255,255,255,0.08);}
   .miles-row .k{font-size:13px; color:#9AA5B4;}
@@ -300,64 +156,88 @@
   .tier-track{height:8px; background:rgba(255,255,255,0.1); border-radius:99px; margin-top:6px; overflow:hidden;}
   .tier-fill{height:100%; background:linear-gradient(90deg,var(--brass-soft),var(--brass)); border-radius:99px;}
   .tier-caption{font-size:11px; color:#8B93A3; margin-top:6px; text-align:right;}
-
-  .note-card{
-    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09);
-    border-radius:16px; padding:16px; text-align:left; margin-bottom:14px;
-  }
-  .note-card label{
-    display:block; font-size:10.5px; letter-spacing:1px; color:#8B93A3;
-    text-transform:uppercase; font-weight:700; margin-bottom:8px;
-  }
-  .note-card textarea{
-    width:100%; min-height:64px; resize:vertical;
-    background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:10px;
-    color:#EDEFF3; font-family:'Inter',sans-serif; font-size:13.5px; padding:10px; line-height:1.5;
-  }
+  .note-card{background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:16px; text-align:left; margin-bottom:14px;}
+  .note-card label{display:block; font-size:10.5px; letter-spacing:1px; color:#8B93A3; text-transform:uppercase; font-weight:700; margin-bottom:8px;}
+  .note-card textarea{width:100%; min-height:64px; resize:vertical; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#EDEFF3; font-family:'Inter',sans-serif; font-size:13.5px; padding:10px; line-height:1.5;}
   .note-card textarea::placeholder{color:#5b6472;}
+
+  /* ---------- 통계 ---------- */
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;}
+  .stat-card{background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:16px;}
+  .stat-card .num{font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:26px; color:var(--brass-soft);}
+  .stat-card .lbl{font-size:11px; color:#9AA5B4; margin-top:4px;}
+  .stat-card.wide{grid-column:span 2;}
+  .globe-bar{height:10px; background:rgba(255,255,255,0.1); border-radius:99px; overflow:hidden; margin-top:10px;}
+  .globe-fill{height:100%; background:linear-gradient(90deg,#4FA6D8,#7FC4E8);}
+
+  .empty-hint{color:#6b7280; font-size:12.5px; padding:20px 4px; text-align:center;}
+
+  /* ---------- 탭바 ---------- */
+  .tabbar{position:fixed; left:0; right:0; bottom:0; max-width:480px; margin:0 auto; display:none; background:rgba(15,18,24,0.92); backdrop-filter:blur(10px); border-top:1px solid rgba(255,255,255,0.08); padding:8px 10px calc(env(safe-area-inset-bottom) + 6px);}
+  .tabbar.show{display:flex;}
+  .tab-btn{flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; background:none; border:none; color:#6b7280; font-size:10.5px; font-family:'Inter',sans-serif; padding:6px 0; cursor:pointer;}
+  .tab-btn .ic{font-size:18px;}
+  .tab-btn.active{color:var(--brass-soft);}
 
   .history{margin-top:6px;}
   .history h3{font-size:11px; letter-spacing:1.5px; color:#8B93A3; text-transform:uppercase; margin:0 0 8px; text-align:left;}
-  .history-item{
-    padding:10px 2px; border-bottom:1px solid rgba(255,255,255,0.06); font-size:12.5px; text-align:left;
-  }
+  .history-item{padding:10px 2px; border-bottom:1px solid rgba(255,255,255,0.06); font-size:12.5px; text-align:left;}
   .history-item .row1{display:flex; justify-content:space-between;}
   .history-item .r{font-family:'JetBrains Mono',monospace; color:#C7CDD6;}
   .history-item .m{color:var(--brass-soft); font-weight:600;}
   .history-item .d{color:#6b7280; font-size:11px;}
-  .history-item .tag{color:#8B93A3; font-size:10.5px; margin-top:2px;}
   .history-item .note{color:#9AA5B4; font-size:11.5px; margin-top:4px; line-height:1.4;}
 
-  .footer-note{
-    margin-top:auto; padding-top:14px; text-align:center;
-    font-size:10.5px; color:#54606f; line-height:1.6;
-  }
-  .version-tag{
-    text-align:center; font-family:'JetBrains Mono',monospace; font-size:10px; color:#3d4653; margin-top:6px;
-  }
+  .footer-note{margin-top:auto; padding-top:14px; text-align:center; font-size:10.5px; color:#54606f; line-height:1.6;}
+  .version-tag{text-align:center; font-family:'JetBrains Mono',monospace; font-size:10px; color:#3d4653; margin-top:6px;}
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- SCREEN A: 발권 데스크 -->
-  <div class="screen active" id="screen-setup">
+  <!-- SCREEN A: 홈 -->
+  <div class="screen active hub" id="screen-setup">
     <div class="topbar">
       <div class="brand">Focus<span>Flight</span></div>
       <div class="status-pill">✈ <b id="tierLabelTop">이코노미</b></div>
     </div>
-    <h1>오늘은 어디로<br>떠나볼까요?</h1>
+    <div id="liveCardWrap"></div>
+    <h1 class="page-title">오늘은 어디로<br>떠나볼까요?</h1>
     <p class="sub">노선을 고르면 그 비행시간만큼 집중 세션이 시작됩니다. 실제 비행시간이 아닌, 몰입에 맞게 축소한 시간입니다.</p>
     <div class="route-list" id="routeList"></div>
 
-    <div class="section-label">무엇에 집중할까요? (선택)</div>
-    <div class="chip-row" id="categoryRow"></div>
+    <div class="section-label">창밖 화면</div>
+    <div class="chip-row" id="styleRow"></div>
 
-    <button class="primary-btn" id="issueBtn" disabled>탑승권 발급</button>
+    <button class="primary-btn" id="issueBtn" disabled>좌석 선택하기</button>
     <div class="footer-note">
-      화면을 켜둔 채 이 앱을 보고 있는 동안 세션이 진행됩니다.<br>기기의 다른 앱을 자동으로 막지는 못해요 — 직접 비행기 모드를 켜두면 더 좋아요.
+      화면을 켜둔 채 이 앱을 보고 있는 동안 세션이 진행됩니다.<br>기기의 다른 앱을 자동으로 막지는 못해요.
     </div>
-    <div class="version-tag">FocusFlight v1.1.0</div>
+    <div class="version-tag">FocusFlight v1.2.0</div>
+  </div>
+
+  <!-- SCREEN A2: 좌석 선택 -->
+  <div class="screen" id="screen-seat">
+    <div class="topbar">
+      <button class="exit-btn" id="seatBackBtn">‹</button>
+      <div class="brand">좌석 선택</div>
+      <div style="width:32px;"></div>
+    </div>
+    <div class="seat-legend">
+      <span><span class="legend-box" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15);"></span>빈자리</span>
+      <span><span class="legend-box" style="background:rgba(255,255,255,0.02);"></span>탑승중</span>
+      <span><span class="legend-box" style="background:var(--brass);"></span>선택됨</span>
+    </div>
+    <div class="seat-map" id="seatMap"></div>
+    <div class="seat-summary">
+      <div>
+        <div style="font-size:11px; color:#9AA5B4;">선택한 좌석</div>
+        <div class="big" id="seatBig">--</div>
+      </div>
+      <div style="text-align:right; font-size:12px; color:#9AA5B4;" id="seatClassLabel">이코노미</div>
+    </div>
+    <button class="primary-btn" id="confirmSeatBtn" disabled>탑승권 발급</button>
+    <div style="height:20px;"></div>
   </div>
 
   <!-- SCREEN B: 탑승권 -->
@@ -367,15 +247,9 @@
       <div class="boarding-pass">
         <div class="bp-top">
           <div class="bp-route">
-            <div>
-              <div class="bp-code" id="passFrom">ICN</div>
-              <div class="bp-city" id="passFromCity">SEOUL</div>
-            </div>
+            <div><div class="bp-code" id="passFrom">ICN</div><div class="bp-city" id="passFromCity">SEOUL</div></div>
             <div class="bp-plane">✈</div>
-            <div style="text-align:right;">
-              <div class="bp-code" id="passTo">NRT</div>
-              <div class="bp-city" id="passToCity">TOKYO</div>
-            </div>
+            <div style="text-align:right;"><div class="bp-code" id="passTo">NRT</div><div class="bp-city" id="passToCity">TOKYO</div></div>
           </div>
           <div class="bp-grid">
             <div class="bp-field"><label>Flight</label><span id="passFlightNo">FF204</span></div>
@@ -383,7 +257,7 @@
             <div class="bp-field"><label>Seat</label><span id="passSeat">24A</span></div>
             <div class="bp-field"><label>Class</label><span id="passClass">ECONOMY</span></div>
             <div class="bp-field"><label>Duration</label><span id="passDur">50분</span></div>
-            <div class="bp-field"><label>Focus</label><span id="passCategory">자유</span></div>
+            <div class="bp-field"><label>Date</label><span id="passDate">07/21</span></div>
           </div>
         </div>
         <div class="bp-perf"></div>
@@ -406,7 +280,6 @@
         <div class="flight-route-label"><span id="flRoute">ICN → NRT</span></div>
         <button class="exit-btn" id="exitBtn">✕</button>
       </div>
-
       <div class="window-shell">
         <div class="window-frame">
           <div class="window-sky" id="windowSky"></div>
@@ -414,10 +287,9 @@
           <div class="window-tint" id="windowTint"></div>
           <div class="window-sun" id="windowSun"></div>
           <div id="cloudLayer"></div>
-          <div class="window-attrib">Esri</div>
+          <div class="window-attrib" id="windowAttrib">Esri</div>
         </div>
       </div>
-
       <div class="split-flap-wrap">
         <div class="flap-group" id="mmGroup"></div>
         <div class="flap-colon">:</div>
@@ -430,9 +302,7 @@
         <div class="readout"><div class="val" id="roDist">-</div><div class="lbl">남은거리(km)</div></div>
       </div>
       <div class="progress-track"><div class="progress-fill" id="flProgress"></div></div>
-      <div class="flight-controls">
-        <button id="pauseBtn">일시정지</button>
-      </div>
+      <div class="flight-controls"><button id="pauseBtn">일시정지</button></div>
     </div>
   </div>
 
@@ -441,7 +311,7 @@
     <div class="landing-wrap">
       <div class="landing-emoji">🛬</div>
       <h1 id="landRoute">착륙했습니다</h1>
-      <p class="sub2" id="landSub">수고하셨어요. 오늘의 비행 기록입니다.</p>
+      <p class="sub" id="landSub">수고하셨어요. 오늘의 비행 기록입니다.</p>
       <div class="miles-card">
         <div class="miles-row"><span class="k">이번 비행 마일리지</span><span class="v" id="earnedMiles">+0</span></div>
         <div class="miles-row"><span class="k">누적 마일리지</span><span class="v" id="totalMiles">0</span></div>
@@ -455,12 +325,38 @@
         <label>비행 로그 — 오늘은 어땠나요?</label>
         <textarea id="flightNote" placeholder="예: 천둥소리 때문에 좀처럼 집중이 안 됐다. 그래도 거의 끝냈다."></textarea>
       </div>
-      <div class="history">
-        <h3>최근 비행기록</h3>
-        <div id="historyList"></div>
-      </div>
-      <button class="primary-btn" id="againBtn" style="margin-top:6px;">다시 발권하기</button>
+      <button class="primary-btn" id="againBtn" style="margin-bottom:20px;">다시 발권하기</button>
     </div>
+  </div>
+
+  <!-- SCREEN E: 탑승권함 -->
+  <div class="screen hub" id="screen-tickets">
+    <div class="topbar"><div class="brand">탑승권함</div><div style="width:32px;"></div></div>
+    <p class="sub">지금까지 다녀온 비행의 탑승권을 모아뒀어요.</p>
+    <div id="ticketList"></div>
+  </div>
+
+  <!-- SCREEN F: 통계 -->
+  <div class="screen hub" id="screen-stats">
+    <div class="topbar"><div class="brand">데이터 · 분석</div><div style="width:32px;"></div></div>
+    <p class="sub">지금까지의 집중 비행 기록을 모아봤어요.</p>
+    <div class="stat-grid" id="statGrid"></div>
+    <div class="stat-card wide">
+      <div class="lbl">지구 둘레(40,075km) 대비 누적 비행거리</div>
+      <div class="num" id="globeLaps">0.00바퀴</div>
+      <div class="globe-bar"><div class="globe-fill" id="globeFill" style="width:0%"></div></div>
+    </div>
+    <div class="history" style="margin-top:16px;">
+      <h3>최근 비행 로그</h3>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+  <!-- 탭바 -->
+  <div class="tabbar" id="tabbar">
+    <button class="tab-btn" data-tab="setup"><span class="ic">🏠</span>홈</button>
+    <button class="tab-btn" data-tab="tickets"><span class="ic">🎫</span>탑승권함</button>
+    <button class="tab-btn" data-tab="stats"><span class="ic">📊</span>통계</button>
   </div>
 
 </div>
@@ -476,55 +372,75 @@
     {from:'ICN',fromCity:'서울',to:'SIN',toCity:'싱가포르',minutes:90,km:4700, fromLat:37.4602,fromLon:126.4407, toLat:1.3644,toLon:103.9915},
     {from:'ICN',fromCity:'서울',to:'CDG',toCity:'파리',minutes:120,km:9000, fromLat:37.4602,fromLon:126.4407, toLat:49.0097,toLon:2.5479},
   ];
-  const CATEGORIES = ['자유','업무','독서','코딩','공부','명상','운동'];
+  const WINDOW_STYLES = [
+    {id:'sat', label:'위성사진'},
+    {id:'map', label:'지도 스타일'},
+    {id:'sky', label:'하늘만'},
+  ];
   const TIERS = [
     {name:'이코노미', min:0},
     {name:'프리미엄 이코노미', min:500},
     {name:'비즈니스', min:1500},
     {name:'퍼스트', min:3500},
   ];
-  const STORAGE_KEY = 'focusflight_data_v1';
+  const DATA_KEY = 'focusflight_data_v2';
+  const ACTIVE_KEY = 'focusflight_active_v2';
+  const PREFS_KEY = 'focusflight_prefs_v1';
 
-  function loadData(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw) return JSON.parse(raw);
-    }catch(e){}
-    return {totalMiles:0, history:[]};
+  function loadJSON(key, fallback){
+    try{ const raw = localStorage.getItem(key); if(raw) return JSON.parse(raw); }catch(e){}
+    return fallback;
   }
-  function saveData(d){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
-  }
+  function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+  let data = loadJSON(DATA_KEY, {totalMiles:0, totalFlights:0, totalMinutes:0, totalKm:0, history:[], routeCounts:{}});
+  let prefs = loadJSON(PREFS_KEY, {windowStyle:'sat'});
+
   function getTier(miles){
     let idx = 0;
     for(let i=0;i<TIERS.length;i++){ if(miles>=TIERS[i].min) idx=i; }
     return idx;
   }
 
-  let data = loadData();
-
-  // ---------------- 화면 전환 ----------------
+  // ---------------- 화면 & 탭 전환 ----------------
   const screens = {
     setup: document.getElementById('screen-setup'),
+    seat: document.getElementById('screen-seat'),
     pass: document.getElementById('screen-pass'),
     flight: document.getElementById('screen-flight'),
     landing: document.getElementById('screen-landing'),
+    tickets: document.getElementById('screen-tickets'),
+    stats: document.getElementById('screen-stats'),
   };
+  const HUB_SCREENS = ['setup','tickets','stats'];
+  const tabbarEl = document.getElementById('tabbar');
+
   function goto(name){
     Object.values(screens).forEach(s=>s.classList.remove('active'));
     screens[name].classList.add('active');
+    if(HUB_SCREENS.includes(name)){
+      tabbarEl.classList.add('show');
+      [...tabbarEl.children].forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+      if(name==='tickets') renderTickets();
+      if(name==='stats') renderStats();
+      if(name==='setup') renderLiveCard();
+    } else {
+      tabbarEl.classList.remove('show');
+    }
   }
+  [...tabbarEl.children].forEach(btn=>{
+    btn.addEventListener('click', ()=>goto(btn.dataset.tab));
+  });
 
   function refreshTopTier(){
     const idx = getTier(data.totalMiles);
     document.getElementById('tierLabelTop').textContent = TIERS[idx].name;
   }
 
-  // ---------------- SCREEN A: 노선 & 카테고리 ----------------
+  // ---------------- 홈: 노선 & 창밖 스타일 ----------------
   const routeListEl = document.getElementById('routeList');
-  const categoryRowEl = document.getElementById('categoryRow');
+  const styleRowEl = document.getElementById('styleRow');
   let selectedRoute = null;
-  let selectedCategory = CATEGORIES[0];
 
   function renderRoutes(){
     routeListEl.innerHTML = '';
@@ -536,10 +452,7 @@
           <div class="route-codes">${r.from} <span class="arrow">→</span> ${r.to}</div>
           <div class="route-cities">${r.fromCity} · ${r.toCity}</div>
         </div>
-        <div class="route-meta">
-          <div class="dur">${r.minutes}분</div>
-          <div class="km">${r.km.toLocaleString()}km</div>
-        </div>`;
+        <div class="route-meta"><div class="dur">${r.minutes}분</div><div class="km">${r.km.toLocaleString()}km</div></div>`;
       card.addEventListener('click', ()=>{
         selectedRoute = r;
         [...routeListEl.children].forEach(c=>c.classList.remove('selected'));
@@ -549,65 +462,144 @@
       routeListEl.appendChild(card);
     });
   }
-  function renderCategories(){
-    categoryRowEl.innerHTML = '';
-    CATEGORIES.forEach((c)=>{
+  function renderStyleRow(){
+    styleRowEl.innerHTML = '';
+    WINDOW_STYLES.forEach((s)=>{
       const chip = document.createElement('div');
-      chip.className = 'chip' + (c===selectedCategory ? ' selected' : '');
-      chip.textContent = c;
+      chip.className = 'chip' + (s.id===prefs.windowStyle ? ' selected' : '');
+      chip.textContent = s.label;
       chip.addEventListener('click', ()=>{
-        selectedCategory = c;
-        [...categoryRowEl.children].forEach(x=>x.classList.remove('selected'));
+        prefs.windowStyle = s.id;
+        saveJSON(PREFS_KEY, prefs);
+        [...styleRowEl.children].forEach(x=>x.classList.remove('selected'));
         chip.classList.add('selected');
       });
-      categoryRowEl.appendChild(chip);
+      styleRowEl.appendChild(chip);
     });
   }
   renderRoutes();
-  renderCategories();
+  renderStyleRow();
   refreshTopTier();
 
-  // ---------------- SCREEN B: 탑승권 ----------------
+  // ---------------- 실시간 현황 카드 (진행중 비행 있을 때) ----------------
+  function renderLiveCard(){
+    const wrap = document.getElementById('liveCardWrap');
+    const active = loadJSON(ACTIVE_KEY, null);
+    if(!active){ wrap.innerHTML=''; return; }
+    const elapsed = Math.floor((Date.now()-active.updatedAt)/1000);
+    const remain = Math.max(0, active.remainingSeconds - elapsed);
+    if(remain<=0){ wrap.innerHTML=''; return; }
+    const mm = String(Math.floor(remain/60)).padStart(2,'0');
+    const ss = String(remain%60).padStart(2,'0');
+    wrap.innerHTML = `
+      <div class="live-card" id="resumeCard">
+        <div>
+          <div class="l1">실시간 현황 · 비행 중</div>
+          <div class="l2">${active.flight.route.from} → ${active.flight.route.to}</div>
+          <div class="l3">남은 시간 ${mm}:${ss}</div>
+        </div>
+        <div class="arrow-ico">›</div>
+      </div>`;
+    document.getElementById('resumeCard').addEventListener('click', ()=>resumeFlight(active, remain));
+  }
+
+  // ---------------- 좌석 선택 ----------------
+  function seatConfigForTier(idx){
+    if(idx===0) return {startRow:20, rows:8, cols:['A','B','C','D','E','F'], aisleAfter:3};
+    if(idx===1) return {startRow:10, rows:6, cols:['A','C','D','F'], aisleAfter:2};
+    if(idx===2) return {startRow:3, rows:5, cols:['A','D'], aisleAfter:1};
+    return {startRow:1, rows:3, cols:['A','K'], aisleAfter:1};
+  }
+  let seatOccupied = new Set();
+  let chosenSeat = null;
+
+  function openSeatScreen(){
+    const tierIdx = getTier(data.totalMiles);
+    const cfg = seatConfigForTier(tierIdx);
+    document.getElementById('seatClassLabel').textContent = TIERS[tierIdx].name;
+    chosenSeat = null;
+    document.getElementById('seatBig').textContent = '--';
+    document.getElementById('confirmSeatBtn').disabled = true;
+
+    seatOccupied = new Set();
+    const totalSeats = cfg.rows*cfg.cols.length;
+    const occCount = Math.round(totalSeats*0.25);
+    while(seatOccupied.size < occCount){
+      const rr = cfg.startRow + Math.floor(Math.random()*cfg.rows);
+      const cc = cfg.cols[Math.floor(Math.random()*cfg.cols.length)];
+      seatOccupied.add(rr+cc);
+    }
+
+    const mapEl = document.getElementById('seatMap');
+    mapEl.innerHTML = '';
+    for(let i=0;i<cfg.rows;i++){
+      const rowNum = cfg.startRow+i;
+      const rowEl = document.createElement('div');
+      rowEl.className = 'seat-row';
+      rowEl.innerHTML = `<div class="rownum">${rowNum}</div>`;
+      cfg.cols.forEach((col, ci)=>{
+        const seatId = rowNum+col;
+        const btn = document.createElement('div');
+        btn.className = 'seat-btn' + (seatOccupied.has(seatId) ? ' occupied' : '');
+        btn.textContent = col;
+        if(!seatOccupied.has(seatId)){
+          btn.addEventListener('click', ()=>{
+            chosenSeat = seatId;
+            document.getElementById('seatBig').textContent = seatId;
+            document.getElementById('confirmSeatBtn').disabled = false;
+            mapEl.querySelectorAll('.seat-btn.selected').forEach(b=>b.classList.remove('selected'));
+            btn.classList.add('selected');
+          });
+        }
+        rowEl.appendChild(btn);
+        if(ci === cfg.aisleAfter-1){
+          const aisle = document.createElement('div');
+          aisle.className = 'seat-aisle';
+          rowEl.appendChild(aisle);
+        }
+      });
+      mapEl.appendChild(rowEl);
+    }
+    goto('seat');
+  }
+
+  document.getElementById('issueBtn').addEventListener('click', ()=>{ if(selectedRoute) openSeatScreen(); });
+  document.getElementById('seatBackBtn').addEventListener('click', ()=>goto('setup'));
+
+  // ---------------- 탑승권 발급 ----------------
   let currentFlight = null;
 
-  document.getElementById('issueBtn').addEventListener('click', ()=>{
-    if(!selectedRoute) return;
+  document.getElementById('confirmSeatBtn').addEventListener('click', ()=>{
+    if(!chosenSeat || !selectedRoute) return;
     const tierIdx = getTier(data.totalMiles);
     const tierName = TIERS[tierIdx].name;
-    let seat;
-    if(tierIdx===0) seat = (20+Math.floor(Math.random()*20))+['A','B','C','D','E','F'][Math.floor(Math.random()*6)];
-    else if(tierIdx===1) seat = (12+Math.floor(Math.random()*8))+['A','C','D','F'][Math.floor(Math.random()*4)];
-    else if(tierIdx===2) seat = (4+Math.floor(Math.random()*6))+['A','D'][Math.floor(Math.random()*2)];
-    else seat = (1+Math.floor(Math.random()*3))+['A','K'][Math.floor(Math.random()*2)];
-
     currentFlight = {
-      route: selectedRoute,
-      seat, cls: tierName, category: selectedCategory,
+      route: selectedRoute, seat: chosenSeat, cls: tierName,
       flightNo: 'FF' + (100+Math.floor(Math.random()*900)),
       gate: (1+Math.floor(Math.random()*30)),
     };
-
     document.getElementById('passFrom').textContent = selectedRoute.from;
     document.getElementById('passFromCity').textContent = selectedRoute.fromCity.toUpperCase();
     document.getElementById('passTo').textContent = selectedRoute.to;
     document.getElementById('passToCity').textContent = selectedRoute.toCity.toUpperCase();
     document.getElementById('passFlightNo').textContent = currentFlight.flightNo;
     document.getElementById('passGate').textContent = currentFlight.gate;
-    document.getElementById('passSeat').textContent = seat;
+    document.getElementById('passSeat').textContent = chosenSeat;
     document.getElementById('passClass').textContent = tierName.toUpperCase();
     document.getElementById('passDur').textContent = selectedRoute.minutes + '분';
-    document.getElementById('passCategory').textContent = selectedCategory;
-
+    const now = new Date();
+    document.getElementById('passDate').textContent = (now.getMonth()+1)+'/'+now.getDate();
     goto('pass');
   });
 
   document.getElementById('backBtn').addEventListener('click', ()=>goto('setup'));
 
-  // ---------------- SCREEN C: 비행 ----------------
+  // ---------------- 비행 중 ----------------
   const windowSky = document.getElementById('windowSky');
   const windowSat = document.getElementById('windowSat');
   const windowTint = document.getElementById('windowTint');
   const windowSun = document.getElementById('windowSun');
+  const windowAttrib = document.getElementById('windowAttrib');
   const cloudLayer = document.getElementById('cloudLayer');
   const flProgress = document.getElementById('flProgress');
   const roAlt = document.getElementById('roAlt');
@@ -617,13 +609,8 @@
   const ssGroup = document.getElementById('ssGroup');
 
   const SKY_STOPS = [
-    [0.00, '#0B1626'],
-    [0.12, '#3A2E52'],
-    [0.28, '#E8825A'],
-    [0.50, '#4FA6D8'],
-    [0.72, '#E8825A'],
-    [0.88, '#3A2E52'],
-    [1.00, '#0B1626'],
+    [0.00, '#0B1626'], [0.12, '#3A2E52'], [0.28, '#E8825A'],
+    [0.50, '#4FA6D8'], [0.72, '#E8825A'], [0.88, '#3A2E52'], [1.00, '#0B1626'],
   ];
   function hexToRgb(h){h=h.replace('#','');return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
   function lerp(a,b,t){return a+(b-a)*t;}
@@ -637,11 +624,8 @@
       if(progress>=SKY_STOPS[i][0] && progress<=SKY_STOPS[i+1][0]){ s0=SKY_STOPS[i]; s1=SKY_STOPS[i+1]; break; }
     }
     const span = s1[0]-s0[0] || 1;
-    const t = (progress - s0[0]) / span;
-    return lerpHex(s0[1], s1[1], t);
+    return lerpHex(s0[1], s1[1], (progress-s0[0])/span);
   }
-
-  // 위경도 → 슬리피맵 타일 좌표
   function lon2tileX(lon, z){ return Math.floor((lon+180)/360*Math.pow(2,z)); }
   function lat2tileY(lat, z){
     const rad = lat*Math.PI/180;
@@ -653,16 +637,21 @@
   function updateWindow(progress){
     const col = skyColorAt(progress);
     windowSky.style.background = `linear-gradient(180deg, ${col}, ${lerpHex('#0B1626','#1B2A44',0.4)})`;
-
     const isNight = progress < 0.06 || progress > 0.94;
     windowTint.style.background = isNight ? 'rgba(6,10,20,0.55)' : 'rgba(0,0,0,0)';
-
-    const sunT = progress;
-    windowSun.style.left = (10 + sunT*80) + '%';
-    windowSun.style.top = (78 - Math.sin(sunT*Math.PI)*55) + '%';
+    windowSun.style.left = (10 + progress*80) + '%';
+    windowSun.style.top = (78 - Math.sin(progress*Math.PI)*55) + '%';
     windowSun.style.opacity = isNight ? '0.2' : '0.95';
 
     if(!currentFlight) return;
+    if(prefs.windowStyle === 'sky'){
+      windowSat.classList.remove('loaded');
+      windowAttrib.style.display = 'none';
+      return;
+    }
+    windowAttrib.style.display = 'block';
+    windowSat.style.filter = prefs.windowStyle === 'map' ? 'saturate(1.6) hue-rotate(200deg) contrast(1.15) brightness(1.15)' : 'none';
+
     const r = currentFlight.route;
     const lat = lerp(r.fromLat, r.toLat, progress);
     const lon = lerp(r.fromLon, r.toLon, progress);
@@ -681,14 +670,11 @@
 
   function spawnClouds(){
     cloudLayer.innerHTML = '';
-    const count = 5;
-    for(let i=0;i<count;i++){
+    for(let i=0;i<5;i++){
       const c = document.createElement('div');
       c.className = 'window-cloud';
-      const w = 50 + Math.random()*70;
-      const h = w*0.4;
-      c.style.width = w+'px';
-      c.style.height = h+'px';
+      const w = 50 + Math.random()*70, h = w*0.4;
+      c.style.width = w+'px'; c.style.height = h+'px';
       c.style.top = (10+Math.random()*70)+'%';
       const dur = 14 + Math.random()*18;
       c.style.animationDuration = dur+'s';
@@ -697,174 +683,135 @@
       cloudLayer.appendChild(c);
     }
   }
-
-  function buildFlaps(container, digitCount){
+  function buildFlaps(container, n){
     container.innerHTML='';
     const flaps=[];
-    for(let i=0;i<digitCount;i++){
-      const f=document.createElement('div');
-      f.className='flap';
-      f.textContent='0';
-      container.appendChild(f);
-      flaps.push(f);
-    }
+    for(let i=0;i<n;i++){ const f=document.createElement('div'); f.className='flap'; f.textContent='0'; container.appendChild(f); flaps.push(f); }
     return flaps;
   }
   let mmFlaps = buildFlaps(mmGroup, 2);
   let ssFlaps = buildFlaps(ssGroup, 2);
-  let lastMM = null, lastSS = null;
-
+  let lastMM=null, lastSS=null;
   function updateFlaps(flaps, str, lastStr){
     for(let i=0;i<flaps.length;i++){
       if(!lastStr || lastStr[i]!==str[i]){
-        flaps[i].classList.remove('flip');
-        void flaps[i].offsetWidth;
-        flaps[i].classList.add('flip');
+        flaps[i].classList.remove('flip'); void flaps[i].offsetWidth; flaps[i].classList.add('flip');
         flaps[i].textContent = str[i];
       }
     }
   }
 
-  let flightTimer = null;
-  let totalSeconds = 0;
-  let remainingSeconds = 0;
-  let paused = false;
+  let flightTimer = null, totalSeconds=0, remainingSeconds=0, paused=false;
+
+  function persistActive(){
+    if(!currentFlight) return;
+    saveJSON(ACTIVE_KEY, {flight: currentFlight, totalSeconds, remainingSeconds, updatedAt: Date.now()});
+  }
+  function clearActive(){ localStorage.removeItem(ACTIVE_KEY); }
 
   function tick(){
-    if(paused) return;
+    if(paused){ persistActive(); return; }
     remainingSeconds--;
     if(remainingSeconds < 0){ finishFlight(); return; }
     renderFlightState();
+    if(remainingSeconds % 5 === 0) persistActive();
   }
 
   function renderFlightState(){
     const progress = 1 - (remainingSeconds/totalSeconds);
-    const mm = Math.floor(remainingSeconds/60);
-    const ss = remainingSeconds%60;
-    const mmStr = String(mm).padStart(2,'0');
-    const ssStr = String(ss).padStart(2,'0');
-    updateFlaps(mmFlaps, mmStr, lastMM);
-    updateFlaps(ssFlaps, ssStr, lastSS);
-    lastMM = mmStr; lastSS = ssStr;
-
+    const mmStr = String(Math.floor(remainingSeconds/60)).padStart(2,'0');
+    const ssStr = String(remainingSeconds%60).padStart(2,'0');
+    updateFlaps(mmFlaps, mmStr, lastMM); updateFlaps(ssFlaps, ssStr, lastSS);
+    lastMM=mmStr; lastSS=ssStr;
     flProgress.style.width = (progress*100).toFixed(1)+'%';
     updateWindow(progress);
-
-    const cruiseP = Math.min(1, progress/0.15);
-    const descP = Math.min(1, (1-progress)/0.15);
+    const cruiseP = Math.min(1, progress/0.15), descP = Math.min(1, (1-progress)/0.15);
     const altFactor = Math.min(cruiseP, descP);
     roAlt.textContent = Math.round(altFactor*32000).toLocaleString();
     roSpd.textContent = Math.round(200 + altFactor*660).toLocaleString();
-    const remainKm = Math.round(currentFlight.route.km * (1-progress));
-    roDist.textContent = remainKm.toLocaleString();
+    roDist.textContent = Math.round(currentFlight.route.km * (1-progress)).toLocaleString();
   }
 
   function startFlight(){
     totalSeconds = currentFlight.route.minutes*60;
     remainingSeconds = totalSeconds;
-    paused = false;
-    lastTileKey = null;
+    launchFlightScreen();
+  }
+  function resumeFlight(active, remain){
+    currentFlight = active.flight;
+    totalSeconds = active.totalSeconds;
+    remainingSeconds = remain;
+    launchFlightScreen();
+  }
+  function launchFlightScreen(){
+    paused = false; lastTileKey = null;
     windowSat.classList.remove('loaded');
     document.getElementById('pauseBtn').textContent = '일시정지';
     document.getElementById('flRoute').textContent = `${currentFlight.route.from} → ${currentFlight.route.to}`;
-    lastMM = null; lastSS = null;
+    lastMM=null; lastSS=null;
     spawnClouds();
     goto('flight');
     requestAnimationFrame(renderFlightState);
     clearInterval(flightTimer);
     flightTimer = setInterval(tick, 1000);
+    persistActive();
   }
 
   document.getElementById('boardBtn').addEventListener('click', startFlight);
-
   document.getElementById('pauseBtn').addEventListener('click', ()=>{
     paused = !paused;
     document.getElementById('pauseBtn').textContent = paused ? '재개' : '일시정지';
+    persistActive();
   });
-
   document.getElementById('exitBtn').addEventListener('click', ()=>{
     const ok = confirm('지금 착륙하지 않고 나가면 이번 비행의 마일리지를 받지 못해요. 나가시겠어요?');
-    if(ok){
-      clearInterval(flightTimer);
-      goto('setup');
-    }
+    if(ok){ clearInterval(flightTimer); clearActive(); goto('setup'); }
   });
 
   function finishFlight(){
     clearInterval(flightTimer);
+    clearActive();
     const route = currentFlight.route;
     const miles = Math.round(route.km/10);
     data.totalMiles += miles;
+    data.totalFlights += 1;
+    data.totalMinutes += route.minutes;
+    data.totalKm += route.km;
+    const rk = route.from+'-'+route.to;
+    data.routeCounts[rk] = (data.routeCounts[rk]||0)+1;
     data.history.unshift({
-      route: `${route.from} → ${route.to}`,
-      minutes: route.minutes,
-      miles,
-      category: currentFlight.category,
-      note: '',
-      date: new Date().toLocaleDateString('ko-KR', {month:'short', day:'numeric'}),
+      route: `${route.from} → ${route.to}`, from: route.from, to: route.to, toCity: route.toCity,
+      minutes: route.minutes, km: route.km, miles, seat: currentFlight.seat, cls: currentFlight.cls,
+      note: '', date: new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'}),
     });
-    data.history = data.history.slice(0, 8);
-    saveData(data);
+    data.history = data.history.slice(0, 30);
+    saveJSON(DATA_KEY, data);
     renderLanding(miles, route);
     goto('landing');
     refreshTopTier();
   }
 
-  // ---------------- SCREEN D: 착륙 ----------------
+  // ---------------- 착륙 ----------------
   const flightNoteEl = document.getElementById('flightNote');
-
   function renderLanding(earned, route){
     document.getElementById('landRoute').textContent = `${route.to} 착륙 완료`;
     document.getElementById('earnedMiles').textContent = '+'+earned.toLocaleString();
     document.getElementById('totalMiles').textContent = data.totalMiles.toLocaleString();
     flightNoteEl.value = '';
-
     const idx = getTier(data.totalMiles);
     const tier = TIERS[idx];
     document.getElementById('currentTier').textContent = tier.name;
-
     const next = TIERS[idx+1];
-    const fillEl = document.getElementById('tierFill');
-    const capEl = document.getElementById('tierCaption');
+    const fillEl = document.getElementById('tierFill'), capEl = document.getElementById('tierCaption');
     if(next){
-      const span = next.min - tier.min;
-      const into = data.totalMiles - tier.min;
+      const span = next.min - tier.min, into = data.totalMiles - tier.min;
       fillEl.style.width = Math.min(100, (into/span*100)).toFixed(0)+'%';
       capEl.textContent = `${next.name}까지 ${(next.min-data.totalMiles).toLocaleString()}마일`;
-    } else {
-      fillEl.style.width = '100%';
-      capEl.textContent = '최고 등급 달성 · 퍼스트클래스';
-    }
-    renderHistory();
+    } else { fillEl.style.width='100%'; capEl.textContent='최고 등급 달성 · 퍼스트클래스'; }
   }
-
-  function renderHistory(){
-    const histEl = document.getElementById('historyList');
-    histEl.innerHTML = '';
-    if(data.history.length===0){
-      histEl.innerHTML = '<div style="color:#6b7280; font-size:12.5px; padding:8px 2px;">아직 기록이 없어요.</div>';
-      return;
-    }
-    data.history.forEach((h)=>{
-      const row = document.createElement('div');
-      row.className = 'history-item';
-      const tagHtml = h.category && h.category!=='자유' ? `<div class="tag">#${h.category}</div>` : '';
-      const noteHtml = h.note ? `<div class="note">"${h.note}"</div>` : '';
-      row.innerHTML = `
-        <div class="row1"><span class="r">${h.route}</span><span class="d">${h.date} · ${h.minutes}분</span><span class="m">+${h.miles}</span></div>
-        ${tagHtml}${noteHtml}`;
-      histEl.appendChild(row);
-    });
-  }
-
   flightNoteEl.addEventListener('change', ()=>{
-    if(data.history.length>0){
-      data.history[0].note = flightNoteEl.value.trim();
-      saveData(data);
-      renderHistory();
-    }
+    if(data.history.length>0){ data.history[0].note = flightNoteEl.value.trim(); saveJSON(DATA_KEY, data); }
   });
-
   document.getElementById('againBtn').addEventListener('click', ()=>{
     selectedRoute = null;
     document.getElementById('issueBtn').disabled = true;
@@ -872,6 +819,73 @@
     goto('setup');
   });
 
+  // ---------------- 탑승권함 ----------------
+  function renderTickets(){
+    const el = document.getElementById('ticketList');
+    if(data.history.length===0){ el.innerHTML = '<div class="empty-hint">아직 발급된 탑승권이 없어요.</div>'; return; }
+    el.innerHTML = data.history.map(h=>`
+      <div class="boarding-pass mini">
+        <div class="bp-top">
+          <div class="bp-route">
+            <div><div class="bp-code">${h.from}</div><div class="bp-city">SEOUL</div></div>
+            <div class="bp-plane">✈</div>
+            <div style="text-align:right;"><div class="bp-code">${h.to}</div><div class="bp-city">${h.toCity.toUpperCase()}</div></div>
+          </div>
+          <div class="bp-grid">
+            <div class="bp-field"><label>Seat</label><span>${h.seat||'-'}</span></div>
+            <div class="bp-field"><label>Class</label><span>${(h.cls||'').toUpperCase()}</span></div>
+            <div class="bp-field"><label>Duration</label><span>${h.minutes}분</span></div>
+            <div class="bp-field"><label>Date</label><span>${h.date}</span></div>
+            <div class="bp-field"><label>Miles</label><span>+${h.miles}</span></div>
+          </div>
+        </div>
+        ${h.note ? `<div class="mini-note">"${h.note}"</div>` : ''}
+      </div>`).join('');
+  }
+
+  // ---------------- 통계 ----------------
+  function renderStats(){
+    const grid = document.getElementById('statGrid');
+    const totalHours = Math.floor(data.totalMinutes/60), remMin = data.totalMinutes%60;
+    let favRoute = '-';
+    const entries = Object.entries(data.routeCounts||{});
+    if(entries.length){ entries.sort((a,b)=>b[1]-a[1]); favRoute = entries[0][0].replace('-',' → '); }
+    grid.innerHTML = `
+      <div class="stat-card"><div class="num">${data.totalFlights}</div><div class="lbl">총 비행 횟수</div></div>
+      <div class="stat-card"><div class="num">${data.totalMiles.toLocaleString()}</div><div class="lbl">누적 마일리지</div></div>
+      <div class="stat-card"><div class="num">${totalHours}h ${remMin}m</div><div class="lbl">총 집중 시간</div></div>
+      <div class="stat-card"><div class="num" style="font-size:18px;">${favRoute}</div><div class="lbl">가장 즐겨 간 노선</div></div>
+    `;
+    const laps = data.totalKm/40075;
+    document.getElementById('globeLaps').textContent = laps.toFixed(2)+'바퀴';
+    document.getElementById('globeFill').style.width = Math.min(100, laps*100)+'%';
+
+    const histEl = document.getElementById('historyList');
+    if(data.history.length===0){ histEl.innerHTML = '<div class="empty-hint">아직 기록이 없어요.</div>'; return; }
+    histEl.innerHTML = data.history.slice(0,8).map(h=>`
+      <div class="history-item">
+        <div class="row1"><span class="r">${h.route}</span><span class="d">${h.date} · ${h.minutes}분</span><span class="m">+${h.miles}</span></div>
+        ${h.note ? `<div class="note">"${h.note}"</div>` : ''}
+      </div>`).join('');
+  }
+
+  // ---------------- 시작 시 진행중 비행 확인 ----------------
+  (function init(){
+    const active = loadJSON(ACTIVE_KEY, null);
+    if(active){
+      const elapsed = Math.floor((Date.now()-active.updatedAt)/1000);
+      const remain = active.remainingSeconds - elapsed;
+      if(remain > 0){ resumeFlight(active, remain); return; }
+      else {
+        // 오프라인 상태로 종료 시각이 이미 지난 경우: 정상 도착 처리
+        currentFlight = active.flight;
+        totalSeconds = active.totalSeconds; remainingSeconds = 0;
+        finishFlight();
+        return;
+      }
+    }
+    goto('setup');
+  })();
 })();
 </script>
 </body>
