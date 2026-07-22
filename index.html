@@ -231,7 +231,7 @@
     <div class="footer-note">
       비행을 시작하면 다른 앱을 사용하거나 화면을 꺼도 시간이 계속 진행됩니다.<br>기기의 다른 앱을 자동으로 막지는 못해요.
     </div>
-    <div class="version-tag">FocusFlight v1.6.0</div>
+    <div class="version-tag">FocusFlight v1.7.0</div>
   </div>
 
   <!-- SCREEN A2: 좌석 선택 -->
@@ -397,7 +397,7 @@
   ];
   const WINDOW_STYLES = [
     {id:'sat', label:'위성사진'},
-    {id:'map', label:'지도 스타일'},
+    {id:'map', label:'항로 지도'},
     {id:'routes', label:'내 항로'},
   ];
   const TIERS = [
@@ -724,6 +724,32 @@
     const a=hexToRgb(h1), b=hexToRgb(h2);
     return `rgb(${Math.round(lerp(a[0],b[0],t))},${Math.round(lerp(a[1],b[1],t))},${Math.round(lerp(a[2],b[2],t))})`;
   }
+
+  function toRad(v){ return v*Math.PI/180; }
+  function toDeg(v){ return v*180/Math.PI; }
+  function greatCirclePoint(route, progress){
+    const lat1=toRad(route.fromLat), lon1=toRad(route.fromLon);
+    const lat2=toRad(route.toLat), lon2=toRad(route.toLon);
+    const dot=Math.sin(lat1)*Math.sin(lat2)+Math.cos(lat1)*Math.cos(lat2)*Math.cos(lon2-lon1);
+    const omega=Math.acos(Math.max(-1,Math.min(1,dot)));
+    if(omega < 1e-8) return {lat:route.fromLat, lon:route.fromLon};
+    const sinOmega=Math.sin(omega);
+    const a=Math.sin((1-progress)*omega)/sinOmega;
+    const b=Math.sin(progress*omega)/sinOmega;
+    const x=a*Math.cos(lat1)*Math.cos(lon1)+b*Math.cos(lat2)*Math.cos(lon2);
+    const y=a*Math.cos(lat1)*Math.sin(lon1)+b*Math.cos(lat2)*Math.sin(lon2);
+    const z=a*Math.sin(lat1)+b*Math.sin(lat2);
+    return {lat:toDeg(Math.atan2(z,Math.sqrt(x*x+y*y))), lon:toDeg(Math.atan2(y,x))};
+  }
+  function routeBearing(route, progress){
+    const p1=greatCirclePoint(route, Math.max(0,progress-0.002));
+    const p2=greatCirclePoint(route, Math.min(1,progress+0.002));
+    const lat1=toRad(p1.lat), lat2=toRad(p2.lat), dLon=toRad(p2.lon-p1.lon);
+    const y=Math.sin(dLon)*Math.cos(lat2);
+    const x=Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);
+    return Math.atan2(y,x);
+  }
+
   function skyColorAt(progress){
     let s0=SKY_STOPS[0], s1=SKY_STOPS[SKY_STOPS.length-1];
     for(let i=0;i<SKY_STOPS.length-1;i++){
@@ -748,6 +774,70 @@
     speed: 0.08+Math.random()*0.18,
     phase: Math.random()*Math.PI*2,
   }));
+
+  function drawFlightMap(progress){
+    const rect = routesCanvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    routesCanvas.width = Math.max(1,Math.round(rect.width*dpr));
+    routesCanvas.height = Math.max(1,Math.round(rect.height*dpr));
+    rctx.setTransform(dpr,0,0,dpr,0,0);
+    const w=rect.width, h=rect.height;
+    rctx.clearRect(0,0,w,h);
+    rctx.fillStyle='#071522'; rctx.fillRect(0,0,w,h);
+
+    const r=currentFlight.route;
+    const samples=80;
+    const pts=[];
+    for(let i=0;i<=samples;i++) pts.push(greatCirclePoint(r,i/samples));
+    const lats=pts.map(p=>p.lat), lons=pts.map(p=>p.lon);
+    let minLat=Math.min(...lats), maxLat=Math.max(...lats), minLon=Math.min(...lons), maxLon=Math.max(...lons);
+    const latPad=Math.max(2,(maxLat-minLat)*0.22), lonPad=Math.max(2,(maxLon-minLon)*0.18);
+    minLat-=latPad; maxLat+=latPad; minLon-=lonPad; maxLon+=lonPad;
+    function project(p){
+      const x=18+(p.lon-minLon)/(maxLon-minLon)*(w-36);
+      const y=18+(maxLat-p.lat)/(maxLat-minLat)*(h-36);
+      return {x,y};
+    }
+
+    rctx.strokeStyle='rgba(133,178,202,.13)'; rctx.lineWidth=1;
+    for(let i=1;i<5;i++){
+      const x=w*i/5; rctx.beginPath(); rctx.moveTo(x,0); rctx.lineTo(x,h); rctx.stroke();
+      const y=h*i/5; rctx.beginPath(); rctx.moveTo(0,y); rctx.lineTo(w,y); rctx.stroke();
+    }
+
+    const currentIndex=Math.max(0,Math.min(samples,Math.round(progress*samples)));
+    function strokeSegment(start,end,color,width,dash=[]){
+      rctx.save(); rctx.strokeStyle=color; rctx.lineWidth=width; rctx.lineCap='round'; rctx.lineJoin='round'; rctx.setLineDash(dash);
+      rctx.beginPath();
+      for(let i=start;i<=end;i++){
+        const q=project(pts[i]); if(i===start) rctx.moveTo(q.x,q.y); else rctx.lineTo(q.x,q.y);
+      }
+      rctx.stroke(); rctx.restore();
+    }
+    strokeSegment(0,samples,'rgba(255,255,255,.22)',2,[5,7]);
+    if(currentIndex>0) strokeSegment(0,currentIndex,'#E7CE7B',3.5);
+
+    const from=project(pts[0]), to=project(pts[samples]), plane=project(greatCirclePoint(r,progress));
+    [[from,r.from],[to,r.to]].forEach(([q,label],idx)=>{
+      rctx.beginPath(); rctx.arc(q.x,q.y,5,0,Math.PI*2); rctx.fillStyle=idx===0?'#dbeafe':'#E7CE7B'; rctx.fill();
+      rctx.font='700 11px "JetBrains Mono", monospace'; rctx.fillStyle='rgba(255,255,255,.9)';
+      rctx.textAlign=idx===0?'left':'right'; rctx.fillText(label,q.x+(idx===0?9:-9),q.y-8);
+    });
+
+    rctx.save(); rctx.translate(plane.x,plane.y); rctx.rotate(routeBearing(r,progress));
+    rctx.shadowColor='rgba(231,206,123,.8)'; rctx.shadowBlur=10; rctx.fillStyle='#E7CE7B';
+    rctx.beginPath(); rctx.moveTo(0,-10); rctx.lineTo(5,6); rctx.lineTo(1.5,4); rctx.lineTo(0,9); rctx.lineTo(-1.5,4); rctx.lineTo(-5,6); rctx.closePath(); rctx.fill();
+    rctx.restore();
+
+    const pos=greatCirclePoint(r,progress);
+    rctx.fillStyle='rgba(3,10,18,.72)'; rctx.fillRect(12,h-54,w-24,40);
+    rctx.fillStyle='rgba(255,255,255,.62)'; rctx.font='10px "JetBrains Mono", monospace'; rctx.textAlign='left';
+    rctx.fillText(`${pos.lat.toFixed(2)}°  ${pos.lon.toFixed(2)}°`,22,h-35);
+    rctx.textAlign='right'; rctx.fillText(`${Math.round(progress*100)}%`,w-22,h-35);
+    rctx.fillStyle='#fff'; rctx.font='700 11px "JetBrains Mono", monospace'; rctx.textAlign='left';
+    rctx.fillText(`${r.from}  →  ${r.to}`,22,h-20);
+    rctx.textAlign='right'; rctx.fillText(`${Math.round(r.km*(1-progress)).toLocaleString()} km`,w-22,h-20);
+  }
 
   function drawRoutes(progress){
     const rect = routesCanvas.getBoundingClientRect();
@@ -846,15 +936,28 @@
       drawRoutes(progress);
       return;
     }
+    const isMap = prefs.windowStyle === 'map';
+    if(isMap){
+      windowSat.classList.remove('loaded');
+      windowAttrib.style.display = 'none';
+      windowBadge.style.display = 'none';
+      mapTint.classList.remove('show');
+      windowTint.style.background = 'rgba(0,0,0,0)';
+      windowStatus.textContent = '';
+      routesCanvas.classList.add('show');
+      drawFlightMap(progress);
+      return;
+    }
+
     routesCanvas.classList.remove('show');
     windowAttrib.style.display = 'block';
-    const isMap = prefs.windowStyle === 'map';
-    windowSat.style.filter = isMap ? 'grayscale(1) contrast(1.15) brightness(1.08)' : 'none';
-    mapTint.classList.toggle('show', isMap);
+    windowSat.style.filter = 'none';
+    mapTint.classList.remove('show');
 
     const r = currentFlight.route;
-    const lat = lerp(r.fromLat, r.toLat, progress);
-    const lon = lerp(r.fromLon, r.toLon, progress);
+    const position = greatCirclePoint(r, progress);
+    const lat = position.lat;
+    const lon = position.lon;
 
     badgeLat = lat; badgeLon = lon;
     const day = isDayAt(lat, lon);
