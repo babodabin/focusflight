@@ -18,11 +18,12 @@
     --cabin:#14171C; --cabin-2:#1D2129;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; padding:0; height:100%; background:var(--night); color:var(--cloud); font-family:'Inter',sans-serif; overflow:hidden; overscroll-behavior:none;}
-  #app{position:fixed; inset:0; display:flex; flex-direction:column; max-width:480px; margin:0 auto; background:var(--night);}
-  .screen{flex:1; display:none; flex-direction:column; padding:env(safe-area-inset-top) 20px 0; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  html,body{margin:0; padding:0; background:var(--night); color:var(--cloud); font-family:'Inter',sans-serif; min-height:100%;}
+  #app{display:flex; flex-direction:column; max-width:480px; margin:0 auto; min-height:100vh; min-height:100dvh; background:var(--night);}
+  .screen{flex:1; display:none; flex-direction:column; padding:env(safe-area-inset-top) 20px 0;}
   .screen.active{display:flex;}
   .screen.hub{padding-bottom:96px;}
+  .screen.immersive{min-height:100vh; min-height:100dvh;}
 
   .topbar{display:flex; align-items:center; justify-content:space-between; padding:14px 4px 10px; flex-shrink:0;}
   .brand{font-family:'Big Shoulders Display', sans-serif; font-weight:800; font-size:20px; letter-spacing:0.5px; color:var(--cloud);}
@@ -108,7 +109,7 @@
 
   /* ---------- 비행 중 ---------- */
   #screen-flight{padding:0; position:relative; background:radial-gradient(ellipse at 50% 0%, var(--cabin-2), var(--cabin) 70%);}
-  .flight-content{position:relative; z-index:2; display:flex; flex-direction:column; height:100%; align-items:center; padding:calc(env(safe-area-inset-top) + 14px) 20px env(safe-area-inset-bottom);}
+  .flight-content{position:relative; z-index:2; display:flex; flex-direction:column; flex:1; align-items:center; padding:calc(env(safe-area-inset-top) + 14px) 20px env(safe-area-inset-bottom);}
   .flight-ui{position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; width:100%; flex:1;}
   .flight-top{display:flex; justify-content:space-between; align-items:center; width:100%;}
   .flight-route-label{font-family:'JetBrains Mono',monospace; font-size:13px; color:rgba(255,255,255,0.85); background:rgba(0,0,0,0.3); padding:6px 12px; border-radius:999px; display:flex; gap:8px; align-items:center;}
@@ -125,6 +126,8 @@
   .window-sky{position:absolute; inset:0; transition:background .6s linear;}
   .window-sat{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .5s ease, filter .3s;}
   .window-sat.loaded{opacity:0.92;}
+  .window-canvas{position:absolute; inset:0; width:100%; height:100%; opacity:0; transition:opacity .4s;}
+  .window-canvas.show{opacity:1;}
   .window-tint{position:absolute; inset:0; mix-blend-mode:multiply; transition:background .6s linear; pointer-events:none;}
   .window-cloud{position:absolute; z-index:3; opacity:0.8; background:rgba(255,255,255,0.85); border-radius:50px; filter:blur(0.5px); animation:drift linear infinite;}
   @keyframes drift{from{transform:translateX(160%);} to{transform:translateX(-160%);}}
@@ -221,7 +224,7 @@
   </div>
 
   <!-- SCREEN A2: 좌석 선택 -->
-  <div class="screen" id="screen-seat">
+  <div class="screen immersive" id="screen-seat">
     <div class="topbar">
       <button class="exit-btn" id="seatBackBtn">‹</button>
       <div class="brand">좌석 선택</div>
@@ -245,7 +248,7 @@
   </div>
 
   <!-- SCREEN B: 탑승권 -->
-  <div class="screen" id="screen-pass">
+  <div class="screen immersive" id="screen-pass">
     <div class="pass-wrap">
       <div class="pass-eyebrow">Boarding Pass</div>
       <div class="boarding-pass">
@@ -278,12 +281,13 @@
   </div>
 
   <!-- SCREEN C: 비행 중 -->
-  <div class="screen" id="screen-flight">
+  <div class="screen immersive" id="screen-flight">
     <div class="flight-content">
       <div class="window-shell" id="windowShell">
         <div class="window-frame">
           <div class="window-sky" id="windowSky"></div>
           <img class="window-sat" id="windowSat" alt="">
+          <canvas class="window-canvas" id="routesCanvas"></canvas>
           <div class="window-tint" id="windowTint"></div>
           <div class="window-sun" id="windowSun"></div>
           <div id="cloudLayer"></div>
@@ -314,7 +318,7 @@
   </div>
 
   <!-- SCREEN D: 착륙 -->
-  <div class="screen" id="screen-landing">
+  <div class="screen immersive" id="screen-landing">
     <div class="landing-wrap">
       <div class="landing-emoji">🛬</div>
       <h1 id="landRoute">착륙했습니다</h1>
@@ -382,7 +386,7 @@
   const WINDOW_STYLES = [
     {id:'sat', label:'위성사진'},
     {id:'map', label:'지도 스타일'},
-    {id:'sky', label:'하늘만'},
+    {id:'routes', label:'내 항로'},
   ];
   const TIERS = [
     {name:'이코노미', min:0},
@@ -649,6 +653,76 @@
   }
   const SAT_ZOOM = 6;
   let lastTileKey = null;
+  const routesCanvas = document.getElementById('routesCanvas');
+  const rctx = routesCanvas.getContext('2d');
+
+  function drawRoutes(progress){
+    const rect = routesCanvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    routesCanvas.width = rect.width*dpr;
+    routesCanvas.height = rect.height*dpr;
+    rctx.setTransform(dpr,0,0,dpr,0,0);
+    const w = rect.width, h = rect.height;
+    const cx = w/2, cy = h/2;
+    const R = Math.min(w,h)*0.46;
+    rctx.clearRect(0,0,w,h);
+
+    const grad = rctx.createRadialGradient(cx,cy*0.85,R*0.1, cx,cy,R);
+    grad.addColorStop(0,'#1B2A44'); grad.addColorStop(1,'#0B1420');
+    rctx.beginPath(); rctx.arc(cx,cy,R,0,Math.PI*2); rctx.fillStyle=grad; rctx.fill();
+
+    rctx.strokeStyle='rgba(255,255,255,0.12)'; rctx.lineWidth=1; rctx.setLineDash([2,5]);
+    for(let i=1;i<=3;i++){ rctx.beginPath(); rctx.arc(cx,cy,R*i/3,0,Math.PI*2); rctx.stroke(); }
+    rctx.setLineDash([]);
+    rctx.strokeStyle='rgba(255,255,255,0.25)'; rctx.lineWidth=1.5;
+    rctx.beginPath(); rctx.arc(cx,cy,R,0,Math.PI*2); rctx.stroke();
+
+    const center = {lat:37.4602, lon:126.4407};
+    const seen = {}; const dests = [];
+    data.history.forEach(h=>{
+      if(!seen[h.to]){ seen[h.to]=true; const rd = ROUTES.find(r=>r.to===h.to); if(rd) dests.push(rd); }
+    });
+    if(currentFlight && !dests.find(d=>d.to===currentFlight.route.to)) dests.push(currentFlight.route);
+
+    let maxDist = 0.0001;
+    dests.forEach(d=>{
+      const dx=(d.toLon-center.lon)*Math.cos(center.lat*Math.PI/180), dy=(d.toLat-center.lat);
+      const dist=Math.sqrt(dx*dx+dy*dy); if(dist>maxDist) maxDist=dist;
+    });
+    function project(lat,lon){
+      const dx=(lon-center.lon)*Math.cos(center.lat*Math.PI/180), dy=(lat-center.lat);
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      const scaled = (dist/maxDist)*R*0.86;
+      const ang = Math.atan2(dy,dx);
+      return {x: cx+Math.cos(ang)*scaled, y: cy-Math.sin(ang)*scaled};
+    }
+
+    dests.forEach(d=>{
+      const p = project(d.toLat, d.toLon);
+      const isCurrent = currentFlight && d.to===currentFlight.route.to;
+      rctx.strokeStyle = isCurrent ? 'rgba(231,206,126,0.9)' : 'rgba(255,255,255,0.32)';
+      rctx.lineWidth = isCurrent ? 2 : 1.2;
+      rctx.beginPath();
+      rctx.moveTo(cx,cy);
+      rctx.quadraticCurveTo((cx+p.x)/2, (cy+p.y)/2-14, p.x, p.y);
+      rctx.stroke();
+      rctx.beginPath(); rctx.arc(p.x,p.y,3,0,Math.PI*2);
+      rctx.fillStyle = isCurrent ? '#E7CE7B' : 'rgba(255,255,255,0.65)'; rctx.fill();
+      rctx.fillStyle='rgba(255,255,255,0.75)'; rctx.font='10px "JetBrains Mono", monospace'; rctx.textAlign='center';
+      rctx.fillText(d.to, p.x, p.y-8);
+    });
+
+    rctx.beginPath(); rctx.arc(cx,cy,4,0,Math.PI*2); rctx.fillStyle='#E7CE7B'; rctx.fill();
+    rctx.fillStyle='rgba(255,255,255,0.8)'; rctx.font='10px "JetBrains Mono", monospace'; rctx.textAlign='center';
+    rctx.fillText('ICN', cx, cy+16);
+
+    if(currentFlight){
+      const p = project(currentFlight.route.toLat, currentFlight.route.toLon);
+      const px = cx+(p.x-cx)*progress, py = cy+(p.y-cy)*progress;
+      rctx.beginPath(); rctx.arc(px,py,5,0,Math.PI*2);
+      rctx.fillStyle='#E7CE7B'; rctx.shadowColor='rgba(231,206,126,0.8)'; rctx.shadowBlur=8; rctx.fill(); rctx.shadowBlur=0;
+    }
+  }
 
   function updateWindow(progress){
     const col = skyColorAt(progress);
@@ -660,11 +734,15 @@
     windowSun.style.opacity = isNight ? '0.2' : '0.95';
 
     if(!currentFlight) return;
-    if(prefs.windowStyle === 'sky'){
+
+    if(prefs.windowStyle === 'routes'){
       windowSat.classList.remove('loaded');
       windowAttrib.style.display = 'none';
+      routesCanvas.classList.add('show');
+      drawRoutes(progress);
       return;
     }
+    routesCanvas.classList.remove('show');
     windowAttrib.style.display = 'block';
     windowSat.style.filter = prefs.windowStyle === 'map' ? 'saturate(1.6) hue-rotate(200deg) contrast(1.15) brightness(1.15)' : 'none';
 
@@ -683,6 +761,7 @@
       testImg.src = url;
     }
   }
+
 
   function spawnClouds(){
     cloudLayer.innerHTML = '';
