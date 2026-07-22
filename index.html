@@ -229,9 +229,9 @@
 
     <button class="primary-btn" id="issueBtn" disabled>좌석 선택하기</button>
     <div class="footer-note">
-      화면을 켜둔 채 이 앱을 보고 있는 동안 세션이 진행됩니다.<br>기기의 다른 앱을 자동으로 막지는 못해요.
+      비행을 시작하면 다른 앱을 사용하거나 화면을 꺼도 시간이 계속 진행됩니다.<br>기기의 다른 앱을 자동으로 막지는 못해요.
     </div>
-    <div class="version-tag">FocusFlight v1.5.0</div>
+    <div class="version-tag">FocusFlight v1.6.0</div>
   </div>
 
   <!-- SCREEN A2: 좌석 선택 -->
@@ -414,7 +414,29 @@
     try{ const raw = localStorage.getItem(key); if(raw) return JSON.parse(raw); }catch(e){}
     return fallback;
   }
-  function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+  function saveJSON(key, val){
+    try{
+      localStorage.setItem(key, JSON.stringify(val));
+      return true;
+    }catch(e){
+      console.warn('저장하지 못했습니다:', key, e);
+      return false;
+    }
+  }
+
+  function removeSaved(key){
+    try{ localStorage.removeItem(key); return true; }
+    catch(e){ console.warn('저장 데이터를 삭제하지 못했습니다:', key, e); return false; }
+  }
+
+  function escapeHTML(value){
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
   let data = loadJSON(DATA_KEY, {totalMiles:0, totalFlights:0, totalMinutes:0, totalKm:0, history:[], routeCounts:{}});
   let prefs = loadJSON(PREFS_KEY, {windowStyle:'sat'});
@@ -492,7 +514,7 @@
     const wrap = document.getElementById('liveCardWrap');
     const active = loadJSON(ACTIVE_KEY, null);
     if(!active){ wrap.innerHTML=''; return; }
-    const elapsed = Math.floor((Date.now()-active.updatedAt)/1000);
+    const elapsed = active.paused ? 0 : Math.floor((Date.now()-active.updatedAt)/1000);
     const remain = Math.max(0, active.remainingSeconds - elapsed);
     if(remain<=0){ wrap.innerHTML=''; return; }
     const mm = String(Math.floor(remain/60)).padStart(2,'0');
@@ -501,7 +523,7 @@
     wrap.innerHTML = `
       <div class="live-widget" id="resumeCard">
         <div class="live-widget-top">
-          <span class="tag"><span class="dot"></span>실시간 현황 · 비행 중</span>
+          <span class="tag"><span class="dot"></span>실시간 현황 · ${active.paused ? '일시정지' : '비행 중'}</span>
         </div>
         <div class="live-widget-row">
           <span class="live-widget-code">${active.flight.route.from}</span>
@@ -877,9 +899,9 @@
 
   function persistActive(){
     if(!currentFlight) return;
-    saveJSON(ACTIVE_KEY, {flight: currentFlight, totalSeconds, remainingSeconds, updatedAt: Date.now()});
+    saveJSON(ACTIVE_KEY, {flight: currentFlight, totalSeconds, remainingSeconds, paused, updatedAt: Date.now()});
   }
-  function clearActive(){ localStorage.removeItem(ACTIVE_KEY); }
+  function clearActive(){ removeSaved(ACTIVE_KEY); }
 
   function tick(){
     if(paused){ persistActive(); return; }
@@ -914,14 +936,14 @@
     currentFlight = active.flight;
     totalSeconds = active.totalSeconds;
     remainingSeconds = remain;
-    launchFlightScreen();
+    launchFlightScreen(Boolean(active.paused));
   }
-  function launchFlightScreen(){
-    paused = false; lastTileKey = null;
+  function launchFlightScreen(initialPaused=false){
+    paused = initialPaused; lastTileKey = null;
     windowSat.classList.remove('loaded');
     applyWindowMode();
     [...styleSwitchEl.children].forEach((b,i)=>b.classList.toggle('active', WINDOW_STYLES[i].id===prefs.windowStyle));
-    document.getElementById('pauseBtn').textContent = '일시정지';
+    document.getElementById('pauseBtn').textContent = paused ? '재개' : '일시정지';
     document.getElementById('flRoute').textContent = `${currentFlight.route.from} → ${currentFlight.route.to}`;
     lastMM=null; lastSS=null;
     goto('flight');
@@ -1013,7 +1035,7 @@
             <div class="bp-field"><label>Miles</label><span>+${h.miles}</span></div>
           </div>
         </div>
-        ${h.note ? `<div class="mini-note">"${h.note}"</div>` : ''}
+        ${h.note ? `<div class="mini-note">${escapeHTML(h.note)}</div>` : ''}
       </div>`).join('');
   }
 
@@ -1039,7 +1061,7 @@
     histEl.innerHTML = data.history.slice(0,8).map(h=>`
       <div class="history-item">
         <div class="row1"><span class="r">${h.route}</span><span class="d">${h.date} · ${h.minutes}분</span><span class="m">+${h.miles}</span></div>
-        ${h.note ? `<div class="note">"${h.note}"</div>` : ''}
+        ${h.note ? `<div class="note">${escapeHTML(h.note)}</div>` : ''}
       </div>`).join('');
   }
 
@@ -1047,7 +1069,7 @@
   (function init(){
     const active = loadJSON(ACTIVE_KEY, null);
     if(active){
-      const elapsed = Math.floor((Date.now()-active.updatedAt)/1000);
+      const elapsed = active.paused ? 0 : Math.floor((Date.now()-active.updatedAt)/1000);
       const remain = active.remainingSeconds - elapsed;
       if(remain > 0){ resumeFlight(active, remain); return; }
       else {
