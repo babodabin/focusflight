@@ -136,13 +136,13 @@
   .window-sky{position:absolute; inset:0; transition:background .6s linear;}
   .window-sat{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .5s ease, filter .3s;}
   .window-sat.loaded{opacity:0.92;}
-  .map-tint{position:absolute; inset:0; background:linear-gradient(160deg, #d7ecc9 0%, #6fa8b5 55%, #274f6b 100%); mix-blend-mode:color; opacity:0; transition:opacity .3s; pointer-events:none;}
-  .map-tint.show{opacity:0.85;}
+  .map-tint{position:absolute; inset:0; background:linear-gradient(160deg, #e6f2d8 0%, #86bcc7 55%, #3d7391 100%); mix-blend-mode:color; opacity:0; transition:opacity .3s; pointer-events:none;}
+  .map-tint.show{opacity:0.7;}
   .window-status{position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); text-align:center; font-size:11px; color:rgba(255,255,255,0.55); z-index:5; padding:0 20px; pointer-events:none; white-space:pre-line; line-height:1.5;}
   .window-canvas{position:absolute; inset:0; width:100%; height:100%; opacity:0; transition:opacity .4s;}
   .window-canvas.show{opacity:1;}
   .window-tint{position:absolute; inset:0; mix-blend-mode:multiply; transition:background .6s linear; pointer-events:none;}
-  .window-sun{position:absolute; width:24px; height:24px; border-radius:50%; z-index:2; background:radial-gradient(circle at 35% 35%, #FFF6D8, #F4D06A 60%, #E8B93A); box-shadow:0 0 24px 6px rgba(244,208,106,0.4); transition:opacity .6s;}
+  .window-badge{position:absolute; top:9px; left:9px; z-index:5; background:rgba(0,0,0,0.42); backdrop-filter:blur(4px); border-radius:999px; padding:5px 11px; font-size:11.5px; color:#fff; display:none; align-items:center; gap:5px; font-family:'JetBrains Mono',monospace;}
   .window-attrib{position:absolute; bottom:3px; right:6px; font-size:7.5px; color:rgba(255,255,255,0.4); z-index:4;}
 
   .split-flap-wrap{display:flex; justify-content:center; align-items:baseline; gap:10px; margin:8px 0 4px;}
@@ -301,7 +301,7 @@
           <div class="map-tint" id="mapTint"></div>
           <canvas class="window-canvas" id="routesCanvas"></canvas>
           <div class="window-tint" id="windowTint"></div>
-          <div class="window-sun" id="windowSun"></div>
+          <div class="window-badge" id="windowBadge"></div>
           <div class="window-attrib" id="windowAttrib">Esri</div>
           <div class="window-status" id="windowStatus"></div>
         </div>
@@ -617,11 +617,51 @@
   const windowSky = document.getElementById('windowSky');
   const windowSat = document.getElementById('windowSat');
   const windowTint = document.getElementById('windowTint');
-  const windowSun = document.getElementById('windowSun');
+  const windowBadge = document.getElementById('windowBadge');
   const windowAttrib = document.getElementById('windowAttrib');
   const mapTint = document.getElementById('mapTint');
   const windowStatus = document.getElementById('windowStatus');
   let lastProgress = 0;
+  let badgeLat = null, badgeLon = null;
+  const weatherCache = {key:null, data:null};
+
+  function solarElevationDeg(lat, lon, date){
+    const rad = Math.PI/180;
+    const start = Date.UTC(date.getUTCFullYear(),0,0);
+    const dayOfYear = Math.floor((date.getTime()-start)/86400000);
+    const decl = -23.44*Math.cos(rad*(360/365)*(dayOfYear+10));
+    const utcHours = date.getUTCHours()+date.getUTCMinutes()/60+date.getUTCSeconds()/3600;
+    const solarTime = utcHours + lon/15;
+    const hourAngle = (solarTime-12)*15;
+    const elevation = Math.asin(Math.sin(rad*lat)*Math.sin(rad*decl)+Math.cos(rad*lat)*Math.cos(rad*decl)*Math.cos(rad*hourAngle))/rad;
+    return elevation;
+  }
+  function isDayAt(lat, lon){ return solarElevationDeg(lat, lon, new Date()) > -0.83; }
+  const WEATHER_ICON_MAP = {2:'\u2601\ufe0f',3:'\u2601\ufe0f',45:'\ud83c\udf2b\ufe0f',48:'\ud83c\udf2b\ufe0f',51:'\ud83c\udf27\ufe0f',53:'\ud83c\udf27\ufe0f',55:'\ud83c\udf27\ufe0f',61:'\ud83c\udf27\ufe0f',63:'\ud83c\udf27\ufe0f',65:'\ud83c\udf27\ufe0f',80:'\ud83c\udf27\ufe0f',81:'\ud83c\udf27\ufe0f',82:'\ud83c\udf27\ufe0f',71:'\u2744\ufe0f',73:'\u2744\ufe0f',75:'\u2744\ufe0f',77:'\u2744\ufe0f',85:'\u2744\ufe0f',86:'\u2744\ufe0f',95:'\u26c8\ufe0f',96:'\u26c8\ufe0f',99:'\u26c8\ufe0f'};
+
+  function renderBadge(){
+    if(badgeLat===null) return;
+    const day = isDayAt(badgeLat, badgeLon);
+    let icon = day ? '\u2600\ufe0f' : '\ud83c\udf19';
+    let text = day ? '\ub0ae' : '\ubc24';
+    if(weatherCache.data){
+      const code = weatherCache.data.weathercode;
+      if(WEATHER_ICON_MAP[code]) icon = WEATHER_ICON_MAP[code];
+      text = Math.round(weatherCache.data.temperature)+'\u00b0C';
+    }
+    windowBadge.textContent = icon+' '+text;
+    windowBadge.style.display = 'flex';
+  }
+  function fetchWeather(lat, lon, key){
+    if(weatherCache.key === key) return;
+    weatherCache.key = key;
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(2)}&longitude=${lon.toFixed(2)}&current_weather=true`)
+      .then(r=>r.json())
+      .then(d=>{
+        if(d && d.current_weather && weatherCache.key===key){ weatherCache.data = d.current_weather; renderBadge(); }
+      })
+      .catch(()=>{});
+  }
 
   function applyWindowMode(){
     windowShell.classList.toggle('full', prefs.windowStyle !== 'sat');
@@ -770,18 +810,15 @@
   function updateWindow(progress){
     const col = skyColorAt(progress);
     windowSky.style.background = `linear-gradient(180deg, ${col}, ${lerpHex('#0B1626','#1B2A44',0.4)})`;
-    const isNight = progress < 0.06 || progress > 0.94;
-    windowTint.style.background = isNight ? 'rgba(6,10,20,0.55)' : 'rgba(0,0,0,0)';
-    windowSun.style.left = (10 + progress*80) + '%';
-    windowSun.style.top = (78 - Math.sin(progress*Math.PI)*55) + '%';
-    windowSun.style.opacity = isNight ? '0.2' : '0.95';
 
     if(!currentFlight) return;
 
     if(prefs.windowStyle === 'routes'){
       windowSat.classList.remove('loaded');
       windowAttrib.style.display = 'none';
+      windowBadge.style.display = 'none';
       mapTint.classList.remove('show');
+      windowTint.style.background = 'rgba(0,0,0,0)';
       windowStatus.textContent = '';
       routesCanvas.classList.add('show');
       drawRoutes(progress);
@@ -796,6 +833,12 @@
     const r = currentFlight.route;
     const lat = lerp(r.fromLat, r.toLat, progress);
     const lon = lerp(r.fromLon, r.toLon, progress);
+
+    badgeLat = lat; badgeLon = lon;
+    const day = isDayAt(lat, lon);
+    windowTint.style.background = day ? 'rgba(0,0,0,0)' : 'rgba(6,10,20,0.5)';
+    renderBadge();
+
     const x = lon2tileX(lon, SAT_ZOOM);
     const y = lat2tileY(lat, SAT_ZOOM);
     const key = x+'_'+y;
@@ -805,8 +848,9 @@
       const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${SAT_ZOOM}/${y}/${x}`;
       const testImg = new Image();
       testImg.onload = ()=>{ windowSat.src = url; windowSat.classList.add('loaded'); windowStatus.textContent=''; };
-      testImg.onerror = ()=>{ windowSat.classList.remove('loaded'); windowStatus.textContent = '위성 이미지를 불러올 수 없어요\\n(네트워크 확인)'; };
+      testImg.onerror = ()=>{ windowSat.classList.remove('loaded'); windowStatus.textContent = '위성 이미지를 불러올 수 없어요\n(네트워크 확인)'; };
       testImg.src = url;
+      fetchWeather(lat, lon, key);
     }
   }
 
